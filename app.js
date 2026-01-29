@@ -1,260 +1,6 @@
 // Squawk - Airline Ops Message Translator
 // Dictionary + regex based parsing (no AI)
-
-// ============================================================================
-// DICTIONARIES
-// ============================================================================
-
-// Aircraft type codes to full names
-const aircraftTypes = {
-    // Boeing 737 family
-    '7M8': 'Boeing 737 MAX 8',
-    '7M9': 'Boeing 737 MAX 9',
-    '738': 'Boeing 737-800',
-    '73H': 'Boeing 737-800',
-    '73W': 'Boeing 737-700',
-    '737': 'Boeing 737',
-    // Boeing widebody
-    '744': 'Boeing 747-400',
-    '748': 'Boeing 747-8',
-    '763': 'Boeing 767-300',
-    '767': 'Boeing 767',
-    '772': 'Boeing 777-200',
-    '77W': 'Boeing 777-300ER',
-    '777': 'Boeing 777',
-    '787': 'Boeing 787',
-    '788': 'Boeing 787-8',
-    '789': 'Boeing 787-9',
-    '78X': 'Boeing 787-10',
-    // Airbus narrowbody
-    '319': 'Airbus A319',
-    '320': 'Airbus A320',
-    '32N': 'Airbus A320neo',
-    '321': 'Airbus A321',
-    '32Q': 'Airbus A321neo',
-    // Airbus widebody
-    '332': 'Airbus A330-200',
-    '333': 'Airbus A330-300',
-    '339': 'Airbus A330-900neo',
-    '359': 'Airbus A350-900',
-    '35K': 'Airbus A350-1000',
-    '388': 'Airbus A380-800',
-    // Regional
-    'E75': 'Embraer E175',
-    'E90': 'Embraer E190',
-    'E95': 'Embraer E195',
-    'CR9': 'Bombardier CRJ-900',
-    'CRJ': 'Bombardier CRJ',
-    'DH4': 'Dash 8-400',
-    'AT7': 'ATR 72'
-};
-
-// Airline codes (IATA 2-letter)
-const airlines = {
-    // North America
-    'AC': 'Air Canada',
-    'WS': 'WestJet',
-    'PD': 'Porter Airlines',
-    'TS': 'Air Transat',
-    'AA': 'American Airlines',
-    'UA': 'United Airlines',
-    'DL': 'Delta Air Lines',
-    'WN': 'Southwest Airlines',
-    'B6': 'JetBlue',
-    'AS': 'Alaska Airlines',
-    'NK': 'Spirit Airlines',
-    'F9': 'Frontier Airlines',
-    // Europe
-    'BA': 'British Airways',
-    'LH': 'Lufthansa',
-    'AF': 'Air France',
-    'KL': 'KLM',
-    'IB': 'Iberia',
-    'AZ': 'ITA Airways',
-    'SK': 'SAS',
-    'AY': 'Finnair',
-    'FI': 'Icelandair',
-    'EI': 'Aer Lingus',
-    'LX': 'Swiss',
-    'OS': 'Austrian',
-    'SN': 'Brussels Airlines',
-    'TP': 'TAP Portugal',
-    'TK': 'Turkish Airlines',
-    'VS': 'Virgin Atlantic',
-    // Middle East / Asia
-    'EK': 'Emirates',
-    'QR': 'Qatar Airways',
-    'EY': 'Etihad Airways',
-    'SQ': 'Singapore Airlines',
-    'CX': 'Cathay Pacific',
-    'QF': 'Qantas',
-    'NZ': 'Air New Zealand',
-    'NH': 'ANA',
-    'JL': 'Japan Airlines',
-    'KE': 'Korean Air',
-    'OZ': 'Asiana Airlines',
-    'CI': 'China Airlines',
-    'BR': 'EVA Air',
-    'MH': 'Malaysia Airlines',
-    'TG': 'Thai Airways',
-    'AI': 'Air India'
-};
-
-// Airport codes (IATA 3-letter)
-const airports = {
-    // Canada
-    'YYZ': 'Toronto Pearson',
-    'YVR': 'Vancouver',
-    'YUL': 'Montreal',
-    'YYC': 'Calgary',
-    'YEG': 'Edmonton',
-    'YOW': 'Ottawa',
-    'YHZ': 'Halifax',
-    'YWG': 'Winnipeg',
-    // USA - Major hubs
-    'JFK': 'New York JFK',
-    'LGA': 'New York LaGuardia',
-    'EWR': 'Newark',
-    'LAX': 'Los Angeles',
-    'SFO': 'San Francisco',
-    'ORD': 'Chicago O\'Hare',
-    'ATL': 'Atlanta',
-    'DFW': 'Dallas/Fort Worth',
-    'DEN': 'Denver',
-    'SEA': 'Seattle',
-    'MIA': 'Miami',
-    'BOS': 'Boston',
-    'IAD': 'Washington Dulles',
-    'DCA': 'Washington Reagan',
-    'PHX': 'Phoenix',
-    'LAS': 'Las Vegas',
-    'MCO': 'Orlando',
-    'MSP': 'Minneapolis',
-    'DTW': 'Detroit',
-    'PHL': 'Philadelphia',
-    'IAH': 'Houston',
-    'SAN': 'San Diego',
-    'TPA': 'Tampa',
-    'FLL': 'Fort Lauderdale',
-    'PDX': 'Portland',
-    'HNL': 'Honolulu',
-    // Europe
-    'LHR': 'London Heathrow',
-    'LGW': 'London Gatwick',
-    'CDG': 'Paris CDG',
-    'ORY': 'Paris Orly',
-    'AMS': 'Amsterdam',
-    'FRA': 'Frankfurt',
-    'MUC': 'Munich',
-    'MAD': 'Madrid',
-    'BCN': 'Barcelona',
-    'FCO': 'Rome',
-    'MXP': 'Milan',
-    'ZRH': 'Zurich',
-    'VIE': 'Vienna',
-    'CPH': 'Copenhagen',
-    'ARN': 'Stockholm',
-    'OSL': 'Oslo',
-    'HEL': 'Helsinki',
-    'DUB': 'Dublin',
-    'LIS': 'Lisbon',
-    'BRU': 'Brussels',
-    'KEF': 'Reykjavik',
-    'IST': 'Istanbul',
-    'ATH': 'Athens',
-    // Middle East / Asia
-    'DXB': 'Dubai',
-    'DOH': 'Doha',
-    'AUH': 'Abu Dhabi',
-    'SIN': 'Singapore',
-    'HKG': 'Hong Kong',
-    'NRT': 'Tokyo Narita',
-    'HND': 'Tokyo Haneda',
-    'ICN': 'Seoul Incheon',
-    'PEK': 'Beijing',
-    'PVG': 'Shanghai',
-    'BKK': 'Bangkok',
-    'KUL': 'Kuala Lumpur',
-    'DEL': 'Delhi',
-    'BOM': 'Mumbai',
-    // Oceania
-    'SYD': 'Sydney',
-    'MEL': 'Melbourne',
-    'AKL': 'Auckland',
-    // Latin America
-    'MEX': 'Mexico City',
-    'CUN': 'Cancun',
-    'GRU': 'São Paulo',
-    'EZE': 'Buenos Aires',
-    'SCL': 'Santiago',
-    'BOG': 'Bogota',
-    'LIM': 'Lima'
-};
-
-// Wheelchair/mobility assistance codes
-const wheelchairTypes = {
-    'WCHR': { name: 'Wheelchair (Ramp)', detail: 'can walk to seat' },
-    'WCHS': { name: 'Wheelchair (Steps)', detail: 'cannot climb stairs' },
-    'WCHC': { name: 'Wheelchair (Cabin)', detail: 'fully immobile' },
-    'WCHP': { name: 'Wheelchair (Own)', detail: 'has own wheelchair' },
-    'BLND': { name: 'Blind passenger', detail: 'requires assistance' },
-    'DEAF': { name: 'Deaf passenger', detail: 'requires assistance' },
-    'DPNA': { name: 'Disabled passenger', detail: 'intellectual/developmental' },
-    'MAAS': { name: 'Meet & Assist', detail: 'requires escort' }
-};
-
-// Special service codes
-const specialServices = {
-    'UMNR': { name: 'Unaccompanied Minor', icon: '👶' },
-    'CHD': { name: 'Child', icon: '🧒' },
-    'INF': { name: 'Infant', icon: '👶' },
-    'INFT': { name: 'Infant', icon: '👶' },
-    'PETC': { name: 'Pet in Cabin', icon: '🐕' },
-    'AVIH': { name: 'Animal in Hold', icon: '🐕' },
-    'DEPA': { name: 'Deportee (accompanied)', icon: '⚠️' },
-    'DEPU': { name: 'Deportee (unaccompanied)', icon: '⚠️' },
-    'STCR': { name: 'Stretcher', icon: '🛏️' },
-    'MEDA': { name: 'Medical Case', icon: '🏥' },
-    'OXYG': { name: 'Oxygen Required', icon: '💨' },
-    'VIP': { name: 'VIP', icon: '⭐' },
-    'CIP': { name: 'Commercially Important', icon: '⭐' },
-    'LANG': { name: 'Language assistance', icon: '🗣️' }
-};
-
-// Country flag emoji to country name mapping
-const flagToCountry = {
-    '🇮🇸': 'Iceland',
-    '🇨🇦': 'Canada',
-    '🇺🇸': 'United States',
-    '🇬🇧': 'United Kingdom',
-    '🇩🇪': 'Germany',
-    '🇫🇷': 'France',
-    '🇪🇸': 'Spain',
-    '🇮🇹': 'Italy',
-    '🇳🇱': 'Netherlands',
-    '🇧🇪': 'Belgium',
-    '🇨🇭': 'Switzerland',
-    '🇦🇹': 'Austria',
-    '🇸🇪': 'Sweden',
-    '🇳🇴': 'Norway',
-    '🇩🇰': 'Denmark',
-    '🇫🇮': 'Finland',
-    '🇮🇪': 'Ireland',
-    '🇵🇹': 'Portugal',
-    '🇬🇷': 'Greece',
-    '🇹🇷': 'Turkey',
-    '🇦🇪': 'UAE',
-    '🇶🇦': 'Qatar',
-    '🇸🇬': 'Singapore',
-    '🇭🇰': 'Hong Kong',
-    '🇯🇵': 'Japan',
-    '🇰🇷': 'South Korea',
-    '🇨🇳': 'China',
-    '🇦🇺': 'Australia',
-    '🇳🇿': 'New Zealand',
-    '🇲🇽': 'Mexico',
-    '🇧🇷': 'Brazil'
-};
+// Dictionaries are loaded from dictionaries.js
 
 // ============================================================================
 // DOM ELEMENTS
@@ -322,8 +68,12 @@ function parseFlights(input) {
     // Split on flight number patterns:
     // - *FI603* (asterisk-wrapped)
     // - 🛫FI602 or 🛬FI602 (emoji prefixed)
+    // Split on flight markers:
+    // - *FI603* (asterisk-wrapped)
+    // - 🛫FI602, 🛬FI602 (emoji prefix)
     // - FI603 at start of line (bare flight number)
-    const flightPattern = /(?=\*[A-Z]{2}\d{1,4}\*)|(?=🛫\s*[A-Z]{2}\d{1,4})|(?=🛬\s*[A-Z]{2}\d{1,4})|(?=^[A-Z]{2}\d{1,4}\s)/m;
+    // - Flight: CM470 (explicit label)
+    const flightPattern = /(?=\*[A-Z]{2}\d{1,4}\*)|(?=🛫\s*[A-Z]{2}\d{1,4})|(?=🛬\s*[A-Z]{2}\d{1,4})|(?=(?:^|\n)Flight[:\s]+[A-Z]{2}\d{1,4})/m;
 
     let blocks = normalized.split(flightPattern).filter(b => b.trim());
 
@@ -393,13 +143,13 @@ function parseSingleFlight(block) {
     // ========== FLIGHT IDENTIFICATION ==========
 
     // Flight number - multiple formats
-    // *FI603*, 🛫FI602, FI603, FI 603
+    // *FI603*, 🛫FI602, FI603, Flight: CM470
     const flightNumPatterns = [
         /\*([A-Z]{2}\d{1,4})\*/,           // *FI603*
         /🛫\s*([A-Z]{2}\d{1,4})/,          // 🛫FI602
         /🛬\s*([A-Z]{2}\d{1,4})/,          // 🛬FI602
-        /(?:^|\n)\s*([A-Z]{2}\d{1,4})\b/,  // FI603 at line start
-        /(?:Flight|FLT)[:\s]*([A-Z]{2}\d{1,4})/i  // Flight: FI603
+        /(?:Flight|FLT)[:\s]*([A-Z]{2}\d{1,4})/i,  // Flight: CM470
+        /(?:^|\n)\s*([A-Z]{2}\d{1,4})\b/   // FI603 at line start
     ];
 
     for (const pattern of flightNumPatterns) {
@@ -415,16 +165,20 @@ function parseSingleFlight(block) {
 
     // ========== DATE ==========
 
-    // Date formats: "26 Jan", "Jan 26" (avoid numeric patterns that match counters/times)
+    // Date formats: "26 Jan", "Jan 26", "28JAN26", "Date: 28JAN26"
     const datePatterns = [
-        /(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i,
-        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\b/i
+        /(\d{1,2})\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{2,4})?\b/i, // 28JAN26 or 28 Jan 26
+        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})(?:\s*,?\s*(\d{2,4}))?\b/i, // Jan 28, 2026
+        /Date[:\s]+(\d{1,2})(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(\d{2,4})?/i // Date: 28JAN26
     ];
 
     for (const pattern of datePatterns) {
         const match = block.match(pattern);
         if (match) {
-            if (pattern === datePatterns[0]) {
+            if (pattern === datePatterns[2]) {
+                // Date: 28JAN26 format
+                flight.date = `${match[2]} ${match[1]}`;
+            } else if (pattern === datePatterns[0]) {
                 flight.date = `${match[2]} ${match[1]}`;
             } else {
                 flight.date = `${match[1]} ${match[2]}`;
@@ -435,10 +189,17 @@ function parseSingleFlight(block) {
 
     // ========== AIRCRAFT ==========
 
-    // Registration: REG:TF-ICJ, REG: TF-ICJ, Registration: TF-ICJ
-    const regMatch = block.match(/(?:REG|Registration)[:\s]*([A-Z]{1,2}-?[A-Z0-9]{2,5})/i);
-    if (regMatch) {
-        flight.registration = regMatch[1].toUpperCase();
+    // Registration: REG:TF-ICJ, AC REG: HP-1832, Registration: TF-ICJ
+    const regPatterns = [
+        /(?:AC\s*)?REG[:\s]*([A-Z]{1,2}-?[A-Z0-9]{2,5})/i,
+        /Registration[:\s]*([A-Z]{1,2}-?[A-Z0-9]{2,5})/i
+    ];
+    for (const pattern of regPatterns) {
+        const match = block.match(pattern);
+        if (match) {
+            flight.registration = match[1].toUpperCase();
+            break;
+        }
     }
 
     // Aircraft type: (7M8), [738], A/C: 320, Type: 789
@@ -460,33 +221,51 @@ function parseSingleFlight(block) {
 
     // ========== TIMES ==========
 
-    // ETA, STA (arrivals)
-    const etaMatch = block.match(/ETA[:\s]*(\d{1,2}:\d{2})/i);
+    // ETA, STA (arrivals) - handles "lt" suffix for local time
+    const etaMatch = block.match(/ETA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
     if (etaMatch) flight.eta = etaMatch[1];
 
-    const staMatch = block.match(/STA[:\s]*(\d{1,2}:\d{2})/i);
+    const staMatch = block.match(/STA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
     if (staMatch) flight.sta = staMatch[1];
 
     // STD, ETD (departures)
-    const stdMatch = block.match(/STD[:\s]*(\d{1,2}:\d{2})/i);
+    const stdMatch = block.match(/STD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
     if (stdMatch) flight.std = stdMatch[1];
 
-    const etdMatch = block.match(/ETD[:\s]*(\d{1,2}:\d{2})/i);
+    const etdMatch = block.match(/ETD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
     if (etdMatch) flight.etd = etdMatch[1];
 
     // Actual times
-    const ataMatch = block.match(/ATA[:\s]*(\d{1,2}:\d{2})/i);
+    const ataMatch = block.match(/ATA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
     if (ataMatch) flight.ata = ataMatch[1];
 
-    const atdMatch = block.match(/ATD[:\s]*(\d{1,2}:\d{2})/i);
+    const atdMatch = block.match(/ATD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
     if (atdMatch) flight.atd = atdMatch[1];
 
     // ========== LOCATION / GATES ==========
 
-    // Gate: C39A, Gate: **C39A/B39*, GATE C39, Gate: B39
-    const gateMatch = block.match(/Gate[:\s*]*\**([\w\d]+(?:\/[\w\d]+)?)\**/i);
-    if (gateMatch) {
-        flight.gate = gateMatch[1].replace(/\*+/g, '').toUpperCase();
+    // Gate: C39A, Gate: **C39A/B39*, Arr Gate: 173// Tow info
+    const gatePatterns = [
+        /Arr\s*Gate[:\s]*(\d{1,3}[A-Z]?)(?:\s*\/\/\s*Tow[^@]*@\s*([^0-9]*\d{1,2}:\d{2}[^,\n]*))?/i,  // Arr Gate: 173// Tow @ time
+        /Gate[:\s*]*\**([\w\d]+(?:\/[\w\d]+)?)\**/i  // Gate: C39A or **C39A/B40*
+    ];
+    for (const pattern of gatePatterns) {
+        const match = block.match(pattern);
+        if (match) {
+            flight.gate = match[1].replace(/\*+/g, '').toUpperCase();
+            // Check for tow info
+            if (match[2]) {
+                flight.towInfo = match[2].trim();
+            }
+            break;
+        }
+    }
+
+    // Check for IFC/tow gate info separately
+    const towMatch = block.match(/Tow\s*(?:IFC\s*)?Gate[:\s]*(\d{1,3}[A-Z]?)\s*@?\s*([\d:]+(?:lt)?)?/i);
+    if (towMatch && !flight.towInfo) {
+        flight.towGate = towMatch[1];
+        if (towMatch[2]) flight.towTime = towMatch[2].replace(/lt$/i, '');
     }
 
     // Stand/Bay: Stand 42, Bay 15
@@ -537,25 +316,95 @@ function parseSingleFlight(block) {
     const bagsMatch = block.match(/(?:Bags?|Baggage)[:\s]*(\d+)/i);
     if (bagsMatch) flight.bags = parseInt(bagsMatch[1]);
 
-    // Carousel: Carousel: 10, Belt: 5 (arrival)
-    const carouselMatch = block.match(/Carousel[:\s]*(\d{1,2})(?:\s+(.+?))?(?:\n|$)/i);
+    // Carousel: Carousel: 10, Carousel: 9might change, Carousel: 12 OVZ: D
+    const carouselMatch = block.match(/Carousel[:\s]*(\d{1,2})\s*([a-z]+.*?)?(?:\s+OVZ[:\s]*([A-Z]))?(?:\n|$)/i);
     if (carouselMatch) {
         flight.carousel = carouselMatch[1];
         // Check for notes like "might change"
         if (carouselMatch[2] && carouselMatch[2].trim()) {
             flight.carouselNote = carouselMatch[2].trim();
         }
+        // Check for oversize baggage area
+        if (carouselMatch[3]) {
+            flight.oversizeBelt = carouselMatch[3];
+        }
+    }
+
+    // XQS (bags count in Copa format): XQS: 148 BIN 1,2 & 3
+    const xqsMatch = block.match(/XQS[:\s]*(\d+)/i);
+    if (xqsMatch && !flight.bags) {
+        flight.bags = parseInt(xqsMatch[1]);
+    }
+
+    // Priority bags: "Priority Bags" followed by counts
+    const priorityMatch = block.match(/Priority\s*Bags[:\s]*\n?\s*(\d+[^\n]+)/i);
+    if (priorityMatch) {
+        flight.priorityBags = priorityMatch[1].trim();
     }
 
     // ========== CARGO ==========
 
-    // Cargo weight: Cargo: **2195KGS **, CARGO: 1500 KG
-    const cargoMatch = block.match(/\*?Cargo\*?[:\s*]*(\d+)\s*(?:KGS?|KG)/i);
-    if (cargoMatch) {
-        flight.cargo = parseInt(cargoMatch[1]);
+    // Cargo weight: Cargo: **2195KGS **, CARGO: 1500 KG, CARGO: 98 Pzs/ 2,062.00 Kgs
+    const cargoPatterns = [
+        /\*?Cargo\*?[:\s*]*(\d+)\s*(?:KGS?|KG)\b/i,  // 2195KGS
+        /\*?Cargo\*?[:\s*]*\d+\s*(?:Pzs?|pcs)[\/\s]*([0-9,\.]+)\s*(?:KGS?|KG)/i,  // 98 Pzs/ 2,062.00 Kgs
+        /TOTAL[=:\s]*\d+\s*pcs[^0-9]*([0-9,\.]+)\s*kg/i,  // TOTAL =31 pcs 592.0 kg
+        /([0-9,\.]+)\s*kg\s*$/im  // 592.0 kg at end of line
+    ];
+
+    for (const pattern of cargoPatterns) {
+        const match = block.match(pattern);
+        if (match && !flight.cargo) {
+            flight.cargo = parseFloat(match[1].replace(/,/g, ''));
+            break;
+        }
     }
 
-    // Cargo NIL: *CARGO* : NIl, Cargo: NIL
+    // Cargo pieces count
+    const cargoPcsMatch = block.match(/\*?Cargo\*?[:\s*]*(\d+)\s*(?:Pzs?|pcs)/i);
+    if (cargoPcsMatch) {
+        flight.cargoPieces = parseInt(cargoPcsMatch[1]);
+    }
+
+    // Special cargo items (lobsters, live animals, consolidation, etc.)
+    const specialCargoItems = [];
+
+    // Live lobsters: "30pcs LIVELOBSTERS" or "30 pcs LIVE LOBSTERS"
+    const lobsterMatch = block.match(/(\d+)\s*(?:pcs?)?\s*(LIVE\s*LOBSTERS?|LIVELOBSTERS?)/i);
+    if (lobsterMatch) {
+        specialCargoItems.push(`🦞 ${lobsterMatch[1]} Live Lobsters`);
+    }
+
+    // Live animals
+    const animalMatch = block.match(/(\d+)\s*(?:pcs?)?\s*(LIVE\s*ANIMALS?|AVI)/i);
+    if (animalMatch) {
+        specialCargoItems.push(`🐾 ${animalMatch[1]} Live Animals`);
+    }
+
+    // Consolidation shipments
+    const consolidationMatch = block.match(/(\d+)\s*(?:pcs?)?\s*CONSOLIDATION/i);
+    if (consolidationMatch) {
+        specialCargoItems.push(`📦 ${consolidationMatch[1]} Consolidation`);
+    }
+
+    // Dangerous goods
+    const dgrMatch = block.match(/(\d+)\s*(?:pcs?)?\s*(?:DGR|DANGEROUS\s*GOODS)/i);
+    if (dgrMatch) {
+        specialCargoItems.push(`⚠️ ${dgrMatch[1]} Dangerous Goods`);
+    }
+
+    if (specialCargoItems.length > 0) {
+        flight.specialCargo = specialCargoItems;
+    }
+
+    // Parse multi-line cargo section for total weight
+    const multiCargoMatch = block.match(/\*?CARGO\*?\s*:[^\d]*\n[\s\S]*?(?:TOTAL\s*=?\s*)?(\d+)\s*(?:pcs?)[\s\S]*?([\d,\.]+)\s*kg/i);
+    if (multiCargoMatch && !flight.cargo) {
+        flight.cargoPieces = parseInt(multiCargoMatch[1]);
+        flight.cargo = parseFloat(multiCargoMatch[2].replace(/,/g, ''));
+    }
+
+    // Cargo NIL: *CARGO* : NIl, Cargo: NIL, *CARGO* : (followed by nothing meaningful)
     if (/\*?Cargo\*?[:\s*]*NIL/i.test(block)) {
         flight.cargoNil = true;
     }
@@ -589,9 +438,19 @@ function parseSingleFlight(block) {
  */
 function parsePassengers(block, flight) {
     // Format 1: "Pax count: C13 M113 INF1" or "Pax: C7 M130 2INFT"
-    const paxLineMatch = block.match(/Pax(?:\s+count)?[:\s]*(.+?)(?:\n|$)/i);
+    let paxLineMatch = block.match(/Pax(?:\s+count)?[:\s]*(.+?)(?:\n|$)/i);
 
-    if (paxLineMatch) {
+    // Format 2: "Pax OB: 160 + 03 INF" (on board with infants separated)
+    const paxOBMatch = block.match(/Pax\s*OB[:\s]*(\d+)\s*\+\s*(\d+)\s*INF/i);
+    if (paxOBMatch) {
+        flight.total = parseInt(paxOBMatch[1]) + parseInt(paxOBMatch[2]);
+        flight.infants = parseInt(paxOBMatch[2]);
+        // Main count is total - infants
+        const mainPax = parseInt(paxOBMatch[1]);
+        flight.paxEconomy = mainPax; // Assume economy if not broken down
+    }
+
+    if (paxLineMatch && !paxOBMatch) {
         const paxLine = paxLineMatch[1];
 
         // Business/First class: C13, J5, F2
@@ -602,7 +461,7 @@ function parsePassengers(block, flight) {
         const economyMatch = paxLine.match(/[MY](\d+)/i);
         if (economyMatch) flight.paxEconomy = parseInt(economyMatch[1]);
 
-        // Infants: INF1, 2INFT, INFT2 (no space allowed between number and INF)
+        // Infants: INF1, 2INFT, INFT2, 1INFT (no space allowed between number and INF)
         const infantMatch = paxLine.match(/(\d+)(?:INF|INFT)|(?:INF|INFT)(\d+)/i);
         if (infantMatch) flight.infants = parseInt(infantMatch[1] || infantMatch[2]);
     }
@@ -616,6 +475,14 @@ function parsePassengers(block, flight) {
     if (flight.paxEconomy === undefined) {
         const economyAlt = block.match(/\bM(\d+)\b/);
         if (economyAlt) flight.paxEconomy = parseInt(economyAlt[1]);
+    }
+
+    // Check for infants in block if not found yet: "+ 03 INF" or "03 INF"
+    if (flight.infants === undefined) {
+        const infBlockMatch = block.match(/\+\s*(\d+)\s*INF|\b(\d+)\s*INF\b/i);
+        if (infBlockMatch) {
+            flight.infants = parseInt(infBlockMatch[1] || infBlockMatch[2]);
+        }
     }
 
     // Children: CHD3, 2CHD
@@ -638,13 +505,19 @@ function parsePassengers(block, flight) {
 function parseWheelchairs(block, flight) {
     const wheelchairs = [];
 
-    // Match patterns like: 1WCHR, 2 WCHS, WCHC x 3
-    const wchrPattern = /(\d+)\s*(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)|(?:(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)\s*[x×]?\s*(\d+))/gi;
+    // Match patterns like: 1WCHR, 2 WCHS, WCHC x 3, WCHC: 9R (type with seat)
+    const wchrPattern = /(\d+)\s*(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)|(?:(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)[:\s]*(\d+)?[A-Z]?)/gi;
 
     let match;
+    const foundTypes = new Set();
     while ((match = wchrPattern.exec(block)) !== null) {
-        const count = parseInt(match[1] || match[4]) || 1;
         const type = (match[2] || match[3]).toUpperCase();
+
+        // Avoid duplicates
+        if (foundTypes.has(type)) continue;
+        foundTypes.add(type);
+
+        const count = parseInt(match[1] || match[4]) || 1;
 
         if (wheelchairTypes[type]) {
             wheelchairs.push({
@@ -694,25 +567,56 @@ function parseSpecialServices(block, flight) {
  * Parse connecting passenger information
  */
 function parseConnections(block, flight) {
-    // Format: Conx Pax6 :first flight 19:45 PD655 LAs
-    // Also: CNX: 6 pax to PD655 19:45 LAS
+    // Format 1: Conx Pax6 :first flight 19:45 PD655 LAs
+    // Format 2: Conx Pax:5 followed by airline breakdown on next line
+    // Format 3: CNX: 6 pax to PD655 19:45 LAS
+
     const conxPatterns = [
         /Conx\s+Pax\s*(\d+)\s*[:\s]*.+?(\d{1,2}:\d{2})\s*([A-Z]{2}\d{1,4})\s*([A-Z]{2,3})/i,
-        /(?:Conx|CNX|Connecting)[:\s]*(\d+)\s*(?:pax\s*)?(?:to\s+)?([A-Z]{2}\d{1,4})\s*(?:@\s*)?(\d{1,2}:\d{2})\s*([A-Z]{2,3})?/i
+        /(?:Conx|CNX|Connecting)[:\s]*(\d+)\s*(?:pax\s*)?(?:to\s+)?([A-Z]{2}\d{1,4})\s*(?:@\s*)?(\d{1,2}:\d{2})\s*([A-Z]{2,3})?/i,
+        /Conx\s*Pax[:\s]*(\d+)/i  // Simple format: just count
     ];
 
     for (const pattern of conxPatterns) {
         const match = block.match(pattern);
         if (match) {
-            const destCode = (match[4] || '').toUpperCase();
-            flight.connecting = {
-                count: parseInt(match[1]),
-                flight: match[pattern === conxPatterns[0] ? 3 : 2].toUpperCase(),
-                time: match[pattern === conxPatterns[0] ? 2 : 3],
-                destination: destCode,
-                destinationName: airports[destCode] || destCode
-            };
+            if (pattern === conxPatterns[2]) {
+                // Simple format - just count, check for breakdown on next lines
+                flight.connecting = {
+                    count: parseInt(match[1])
+                };
+            } else {
+                const destCode = (match[4] || '').toUpperCase();
+                flight.connecting = {
+                    count: parseInt(match[1]),
+                    flight: match[pattern === conxPatterns[0] ? 3 : 2].toUpperCase(),
+                    time: match[pattern === conxPatterns[0] ? 2 : 3],
+                    destination: destCode,
+                    destinationName: airports[destCode] || destCode
+                };
+            }
             break;
+        }
+    }
+
+    // Check for airline breakdown following Conx line: "1AC 3PD 1WS"
+    if (flight.connecting) {
+        const breakdownMatch = block.match(/Conx\s*Pax[:\s]*\d+[^\n]*\n\s*((?:\d+[A-Z]{2}\s*)+)/i);
+        if (breakdownMatch) {
+            const breakdown = [];
+            const airlinePattern = /(\d+)([A-Z]{2})/g;
+            let airlineMatch;
+            while ((airlineMatch = airlinePattern.exec(breakdownMatch[1])) !== null) {
+                const code = airlineMatch[2];
+                breakdown.push({
+                    count: parseInt(airlineMatch[1]),
+                    code: code,
+                    airlineName: airlines[code] || code
+                });
+            }
+            if (breakdown.length > 0) {
+                flight.connecting.breakdown = breakdown;
+            }
         }
     }
 }
@@ -816,10 +720,15 @@ function renderSingleFlight(flight) {
 
     // Gate (arrivals)
     if (flight.gate) {
+        let gateLabel = 'Arrival Gate';
+        if (flight.towGate) {
+            gateLabel += ` → Tow to ${flight.towGate}`;
+            if (flight.towTime) gateLabel += ` @ ${flight.towTime}`;
+        }
         infoBoxes += `
             <div class="info-box">
                 <div class="value">🚪 ${flight.gate}</div>
-                <div class="label">Arrival Gate</div>
+                <div class="label">${gateLabel}</div>
             </div>
         `;
     }
@@ -934,10 +843,16 @@ function renderSingleFlight(flight) {
 
     // Connecting passengers (outbound)
     if (flight.connecting) {
+        let connectingDetails = '';
+        if (flight.connecting.flight) {
+            connectingDetails = `Next flight: ${flight.connecting.flight} at ${flight.connecting.time}${flight.connecting.destinationName ? ` to ${flight.connecting.destinationName}` : ''}`;
+        } else if (flight.connecting.breakdown) {
+            connectingDetails = flight.connecting.breakdown.map(b => `${b.count} → ${b.airlineName}`).join(', ');
+        }
         html += `
             <div class="special-box">
                 <div class="header">🔄 ${flight.connecting.count} Passengers Connecting</div>
-                <div class="details">Next flight: ${flight.connecting.flight} at ${flight.connecting.time}${flight.connecting.destinationName ? ` to ${flight.connecting.destinationName}` : ''}</div>
+                ${connectingDetails ? `<div class="details">${connectingDetails}</div>` : ''}
             </div>
         `;
     }
@@ -962,28 +877,35 @@ function renderSingleFlight(flight) {
         html += '<div class="info-grid">';
 
         if (flight.bags) {
+            let bagsLabel = 'Checked Bags';
+            if (flight.priorityBags) bagsLabel += ` • Priority: ${flight.priorityBags}`;
             html += `
                 <div class="info-box">
                     <div class="value">🧳 ${flight.bags}</div>
-                    <div class="label">Checked Bags</div>
+                    <div class="label">${bagsLabel}</div>
                 </div>
             `;
         }
 
         if (flight.carousel) {
+            let carouselLabel = 'Baggage Carousel';
+            if (flight.carouselNote) carouselLabel += ` (${flight.carouselNote})`;
+            if (flight.oversizeBelt) carouselLabel += ` • Oversize: ${flight.oversizeBelt}`;
             html += `
                 <div class="info-box">
                     <div class="value">🔄 ${flight.carousel}</div>
-                    <div class="label">Baggage Carousel${flight.carouselNote ? ' (' + flight.carouselNote + ')' : ''}</div>
+                    <div class="label">${carouselLabel}</div>
                 </div>
             `;
         }
 
         if (flight.cargo) {
+            let cargoLabel = 'Cargo Weight';
+            if (flight.cargoPieces) cargoLabel += ` (${flight.cargoPieces} pcs)`;
             html += `
                 <div class="info-box">
                     <div class="value">📦 ${flight.cargo.toLocaleString()} kg</div>
-                    <div class="label">Cargo Weight</div>
+                    <div class="label">${cargoLabel}</div>
                 </div>
             `;
         }
@@ -993,6 +915,15 @@ function renderSingleFlight(flight) {
                 <div class="info-box nil">
                     <div class="value">📦 None</div>
                     <div class="label">No Cargo</div>
+                </div>
+            `;
+        }
+
+        if (flight.specialCargo && flight.specialCargo.length > 0) {
+            html += `
+                <div class="info-box special-cargo">
+                    <div class="value">${flight.specialCargo.join(', ')}</div>
+                    <div class="label">Special Cargo</div>
                 </div>
             `;
         }

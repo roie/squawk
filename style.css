@@ -334,6 +334,15 @@ header h1 {
     color: var(--text-muted);
 }
 
+.info-box.special-cargo {
+    border-color: var(--accent-primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.info-box.special-cargo .value {
+    color: var(--accent-primary);
+}
+
 /* ============================================================================
    PASSENGER TABLE - Clear breakdown
    ============================================================================ */
