@@ -380,8 +380,14 @@ header h1 {
     margin-bottom: 1rem;
 }
 
-.info-grid:empty {
+.info-grid:empty,
+.pax-grid:empty {
     display: none;
+    margin: 0;
+}
+
+.info-grid:last-child {
+    margin-bottom: 0;
 }
 
 .info-box {
@@ -558,6 +564,31 @@ header h1 {
    RESPONSIVE ADJUSTMENTS
    ============================================================================ */
 
+/* Tablet */
+@media (max-width: 768px) {
+    body {
+        padding: 1.5rem;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
+    .info-grid {
+        gap: 0.5rem;
+    }
+
+    .info-box {
+        min-width: 85px;
+        flex: 1 1 calc(33% - 0.5rem);
+    }
+
+    .pax-box {
+        flex: 1 1 calc(25% - 0.5rem);
+    }
+}
+
+/* Mobile */
 @media (max-width: 600px) {
     body {
         padding: 1rem;
@@ -567,21 +598,93 @@ header h1 {
         font-size: 1.75rem;
     }
 
+    .tagline {
+        font-size: 0.8rem;
+    }
+
+    #input-text {
+        min-height: 180px;
+        padding: 1rem;
+        font-size: 0.8rem;
+    }
+
     .card-body {
         padding: 1rem;
     }
 
-    .info-box {
-        min-width: 80px;
-        padding: 0.6rem 0.75rem;
+    .card-header {
+        padding: 12px 14px;
     }
 
-    .pax-box {
-        min-width: 65px;
+    .section-header {
+        font-size: 0.75rem;
+        padding: 0.5rem 0;
+    }
+
+    .flight-title {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .flight-date {
+        text-align: left;
     }
 
     .flight-number {
         font-size: 1.15rem;
+    }
+
+    .flight-origin {
+        font-size: 0.8rem;
+    }
+
+    .info-grid {
+        gap: 0.4rem;
+    }
+
+    .info-box {
+        min-width: 0;
+        flex: 1 1 calc(50% - 0.4rem);
+        padding: 0.6rem 0.75rem;
+    }
+
+    .info-box .value {
+        font-size: 0.9rem;
+    }
+
+    .info-box .label {
+        font-size: 0.6rem;
+    }
+
+    .pax-grid {
+        gap: 0.4rem;
+    }
+
+    .pax-box {
+        min-width: 0;
+        flex: 1 1 calc(25% - 0.4rem);
+        padding: 0.5rem 0.6rem;
+    }
+
+    .pax-box .count {
+        font-size: 1.2rem;
+    }
+
+    .pax-box .type {
+        font-size: 0.55rem;
+    }
+
+    .special-box {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .special-box .header {
+        font-size: 0.8rem;
+    }
+
+    .special-box .details {
+        font-size: 0.75rem;
+        padding-left: 1.25rem;
     }
 
     .button-group {
@@ -591,7 +694,104 @@ header h1 {
     .btn {
         width: 100%;
         text-align: center;
+        justify-content: center;
     }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .watermark {
+        font-size: 0.65rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 380px) {
+    body {
+        padding: 0.75rem;
+    }
+
+    .info-box {
+        flex: 1 1 100%;
+    }
+
+    .pax-box {
+        flex: 1 1 calc(50% - 0.4rem);
+    }
+}
+
+/* ============================================================================
+   TRANSITIONS & HOVER STATES
+   ============================================================================ */
+
+/* Global transition for interactive elements */
+.btn,
+.btn-action,
+.info-box,
+.pax-box,
+.special-box {
+    transition: all 0.2s ease;
+}
+
+/* Info box hover */
+.info-box:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+}
+
+/* Pax box hover */
+.pax-box:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+}
+
+.pax-box.total:hover {
+    background: rgba(74, 158, 255, 0.18);
+    border-color: rgba(74, 158, 255, 0.4);
+}
+
+/* Special box hover */
+.special-box:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.special-box.wheelchair:hover {
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.special-box.transfer:hover {
+    background: rgba(74, 158, 255, 0.08);
+}
+
+.special-box.service:hover {
+    background: rgba(45, 212, 191, 0.08);
+}
+
+.special-box.remarks:hover {
+    background: rgba(255, 193, 7, 0.1);
+}
+
+/* Card subtle glow on hover */
+.card {
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.55),
+        0 10px 30px rgba(0, 0, 0, 0.35),
+        0 0 1px rgba(255, 255, 255, 0.15),
+        0 0 40px rgba(74, 158, 255, 0.05);
 }
 
 /* ============================================================================
@@ -606,6 +806,17 @@ header h1 {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
@@ -624,4 +835,27 @@ header h1 {
 /* Card entrance animation */
 .output-section .card {
     animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Action buttons entrance */
+.action-buttons {
+    animation: fadeIn 0.4s ease-out 0.2s forwards;
+    opacity: 0;
+}
+
+/* Staggered info box animation */
+.info-box,
+.pax-box,
+.special-box {
+    animation: slideIn 0.25s ease-out forwards;
+}
+
+/* ============================================================================
+   UTILITIES
+   ============================================================================ */
+
+/* Ensure proper emoji rendering */
+.icon,
+.btn-icon {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }

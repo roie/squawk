@@ -475,8 +475,8 @@ function parseSingleFlight(block) {
 
     // ========== LOCATION / GATES ==========
 
-    // Gate: C39A, Gate: **C39A/B39*, GATE C39
-    const gateMatch = block.match(/Gate[:\s*]*([A-Z]?\d{1,3}[A-Z]?(?:\/[A-Z]?\d{1,3}[A-Z]?)?)/i);
+    // Gate: C39A, Gate: **C39A/B39*, GATE C39, Gate: B39
+    const gateMatch = block.match(/Gate[:\s*]*\**([\w\d]+(?:\/[\w\d]+)?)\**/i);
     if (gateMatch) {
         flight.gate = gateMatch[1].replace(/\*+/g, '').toUpperCase();
     }
@@ -542,13 +542,13 @@ function parseSingleFlight(block) {
     // ========== CARGO ==========
 
     // Cargo weight: Cargo: **2195KGS **, CARGO: 1500 KG
-    const cargoMatch = block.match(/Cargo[:\s*]*(\d+)\s*(?:KGS?|KG)/i);
+    const cargoMatch = block.match(/\*?Cargo\*?[:\s*]*(\d+)\s*(?:KGS?|KG)/i);
     if (cargoMatch) {
         flight.cargo = parseInt(cargoMatch[1]);
     }
 
     // Cargo NIL: *CARGO* : NIl, Cargo: NIL
-    if (/Cargo[:\s*]*NIL/i.test(block)) {
+    if (/\*?Cargo\*?[:\s*]*NIL/i.test(block)) {
         flight.cargoNil = true;
     }
 
@@ -796,22 +796,22 @@ function renderSingleFlight(flight) {
     `;
 
     // ===== INFO BOXES (Aircraft, Gate, Time) =====
-    html += '<div class="info-grid">';
+    let infoBoxes = '';
 
     // Aircraft registration and type
     if (flight.registration) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">🛩️</div>
                 <div class="value">${flight.registration}</div>
-                <div class="label">${flight.aircraft || ''}</div>
+                <div class="label">${flight.aircraft || 'Aircraft'}</div>
             </div>
         `;
     }
 
     // Gate (arrivals)
     if (flight.gate) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">📍</div>
                 <div class="value">${flight.gate}</div>
@@ -822,7 +822,7 @@ function renderSingleFlight(flight) {
 
     // Stand/Bay
     if (flight.stand) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">🅿️</div>
                 <div class="value">${flight.stand}</div>
@@ -833,7 +833,7 @@ function renderSingleFlight(flight) {
 
     // Counters (departures)
     if (flight.counters) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">📍</div>
                 <div class="value">${flight.counters}</div>
@@ -846,7 +846,7 @@ function renderSingleFlight(flight) {
     const time = flight.eta || flight.sta || flight.std || flight.etd;
     const timeLabel = flight.eta ? 'ETA' : flight.sta ? 'STA' : flight.std ? 'STD' : flight.etd ? 'ETD' : '';
     if (time) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">⏰</div>
                 <div class="value">${time}</div>
@@ -859,7 +859,7 @@ function renderSingleFlight(flight) {
     const actualTime = flight.ata || flight.atd;
     const actualLabel = flight.ata ? 'ATA' : 'ATD';
     if (actualTime) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">✅</div>
                 <div class="value">${actualTime}</div>
@@ -870,7 +870,7 @@ function renderSingleFlight(flight) {
 
     // Lateral/Belt (departures)
     if (flight.lateral) {
-        html += `
+        infoBoxes += `
             <div class="info-box">
                 <div class="icon">🎫</div>
                 <div class="value">Belt ${flight.lateral}</div>
@@ -879,7 +879,10 @@ function renderSingleFlight(flight) {
         `;
     }
 
-    html += '</div>';
+    // Only add info grid if there's content
+    if (infoBoxes) {
+        html += `<div class="info-grid">${infoBoxes}</div>`;
+    }
 
     // ===== PASSENGER COUNTS =====
     if (flight.paxBusiness !== undefined || flight.paxEconomy !== undefined ||
@@ -1186,19 +1189,27 @@ async function saveAsPNG() {
             padding: 40px;
             background-color: #0d0d0d;
             display: inline-block;
+            position: absolute;
+            left: -9999px;
+            top: 0;
         `;
 
-        // Clone the card
+        // Clone the card and ensure styles are applied
         const cardClone = outputCard.cloneNode(true);
+        cardClone.style.animation = 'none';
         wrapper.appendChild(cardClone);
         document.body.appendChild(wrapper);
+
+        // Wait a frame for styles to apply
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         // Render to canvas
         const canvas = await html2canvas(wrapper, {
             backgroundColor: '#0d0d0d',
             scale: 2,
             logging: false,
-            useCORS: true
+            useCORS: true,
+            allowTaint: true
         });
 
         // Clean up
@@ -1252,19 +1263,27 @@ async function copyImageToClipboard() {
             padding: 40px;
             background-color: #0d0d0d;
             display: inline-block;
+            position: absolute;
+            left: -9999px;
+            top: 0;
         `;
 
-        // Clone the card
+        // Clone the card and ensure styles are applied
         const cardClone = outputCard.cloneNode(true);
+        cardClone.style.animation = 'none';
         wrapper.appendChild(cardClone);
         document.body.appendChild(wrapper);
+
+        // Wait a frame for styles to apply
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         // Render to canvas
         const canvas = await html2canvas(wrapper, {
             backgroundColor: '#0d0d0d',
             scale: 2,
             logging: false,
-            useCORS: true
+            useCORS: true,
+            allowTaint: true
         });
 
         // Clean up
