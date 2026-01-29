@@ -415,11 +415,10 @@ function parseSingleFlight(block) {
 
     // ========== DATE ==========
 
-    // Multiple date formats: "26 Jan", "Jan 26", "26/01", "2024-01-26"
+    // Date formats: "26 Jan", "Jan 26" (avoid numeric patterns that match counters/times)
     const datePatterns = [
         /(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i,
-        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\b/i,
-        /(\d{1,2})[\/\-](\d{1,2})(?:[\/\-]\d{2,4})?/
+        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\b/i
     ];
 
     for (const pattern of datePatterns) {
@@ -427,10 +426,8 @@ function parseSingleFlight(block) {
         if (match) {
             if (pattern === datePatterns[0]) {
                 flight.date = `${match[2]} ${match[1]}`;
-            } else if (pattern === datePatterns[1]) {
-                flight.date = `${match[1]} ${match[2]}`;
             } else {
-                flight.date = match[0];
+                flight.date = `${match[1]} ${match[2]}`;
             }
             break;
         }
@@ -797,7 +794,7 @@ function renderSingleFlight(flight) {
         </div>
         <div class="flight-title">
             <div>
-                <div class="flight-number">${flight.number || 'Unknown'}</div>
+                <div class="flight-number">✈️ ${flight.number || 'Unknown'}</div>
                 ${routeDisplay ? `<div class="flight-origin">${routeDisplay}</div>` : ''}
             </div>
             ${flight.date ? `<div class="flight-date">${flight.date}</div>` : ''}
@@ -811,7 +808,7 @@ function renderSingleFlight(flight) {
     if (flight.registration) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${flight.registration}</div>
+                <div class="value">✈️ ${flight.registration}</div>
                 <div class="label">${flight.aircraft || 'Aircraft'}</div>
             </div>
         `;
@@ -821,7 +818,7 @@ function renderSingleFlight(flight) {
     if (flight.gate) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${flight.gate}</div>
+                <div class="value">🚪 ${flight.gate}</div>
                 <div class="label">Arrival Gate</div>
             </div>
         `;
@@ -831,7 +828,7 @@ function renderSingleFlight(flight) {
     if (flight.stand) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${flight.stand}</div>
+                <div class="value">🅿️ ${flight.stand}</div>
                 <div class="label">Stand</div>
             </div>
         `;
@@ -841,7 +838,7 @@ function renderSingleFlight(flight) {
     if (flight.counters) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${flight.counters}</div>
+                <div class="value">🎫 ${flight.counters}</div>
                 <div class="label">Check-in Counters</div>
             </div>
         `;
@@ -853,7 +850,7 @@ function renderSingleFlight(flight) {
     if (time) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${time}</div>
+                <div class="value">🕐 ${time}</div>
                 <div class="label">${timeLabel}</div>
             </div>
         `;
@@ -865,7 +862,7 @@ function renderSingleFlight(flight) {
     if (actualTime) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${actualTime}</div>
+                <div class="value">✅ ${actualTime}</div>
                 <div class="label">${actualLabel}</div>
             </div>
         `;
@@ -875,7 +872,7 @@ function renderSingleFlight(flight) {
     if (flight.lateral) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">${flight.lateral}</div>
+                <div class="value">🛄 ${flight.lateral}</div>
                 <div class="label">Baggage Belt</div>
             </div>
         `;
@@ -889,7 +886,7 @@ function renderSingleFlight(flight) {
     if (flight.paxBusiness !== undefined || flight.paxEconomy !== undefined ||
         flight.infants !== undefined || flight.children !== undefined || flight.total !== undefined) {
 
-        html += '<div class="pax-section"><div class="pax-section-label">Passengers on Board</div><div class="pax-grid">';
+        html += '<div class="pax-section"><div class="pax-section-label">👥 Passengers on Board</div><div class="pax-grid">';
 
         if (flight.paxBusiness !== undefined) {
             html += `<div class="pax-box"><div class="count">${flight.paxBusiness}</div><div class="type">Business</div></div>`;
@@ -939,7 +936,7 @@ function renderSingleFlight(flight) {
     if (flight.connecting) {
         html += `
             <div class="special-box">
-                <div class="header">${flight.connecting.count} Passengers Connecting</div>
+                <div class="header">🔄 ${flight.connecting.count} Passengers Connecting</div>
                 <div class="details">Next flight: ${flight.connecting.flight} at ${flight.connecting.time}${flight.connecting.destinationName ? ` to ${flight.connecting.destinationName}` : ''}</div>
             </div>
         `;
@@ -952,7 +949,7 @@ function renderSingleFlight(flight) {
             .join(', ');
         html += `
             <div class="special-box">
-                <div class="header">Incoming Transfer Passengers</div>
+                <div class="header">🔄 Incoming Transfer Passengers</div>
                 <div class="details">${transferText}</div>
             </div>
         `;
@@ -967,7 +964,7 @@ function renderSingleFlight(flight) {
         if (flight.bags) {
             html += `
                 <div class="info-box">
-                    <div class="value">${flight.bags}</div>
+                    <div class="value">🧳 ${flight.bags}</div>
                     <div class="label">Checked Bags</div>
                 </div>
             `;
@@ -976,7 +973,7 @@ function renderSingleFlight(flight) {
         if (flight.carousel) {
             html += `
                 <div class="info-box">
-                    <div class="value">${flight.carousel}</div>
+                    <div class="value">🔄 ${flight.carousel}</div>
                     <div class="label">Baggage Carousel${flight.carouselNote ? ' (' + flight.carouselNote + ')' : ''}</div>
                 </div>
             `;
@@ -985,7 +982,7 @@ function renderSingleFlight(flight) {
         if (flight.cargo) {
             html += `
                 <div class="info-box">
-                    <div class="value">${flight.cargo.toLocaleString()} kg</div>
+                    <div class="value">📦 ${flight.cargo.toLocaleString()} kg</div>
                     <div class="label">Cargo Weight</div>
                 </div>
             `;
@@ -994,7 +991,7 @@ function renderSingleFlight(flight) {
         if (flight.cargoNil) {
             html += `
                 <div class="info-box nil">
-                    <div class="value">None</div>
+                    <div class="value">📦 None</div>
                     <div class="label">No Cargo</div>
                 </div>
             `;
@@ -1003,7 +1000,7 @@ function renderSingleFlight(flight) {
         if (flight.mail) {
             html += `
                 <div class="info-box">
-                    <div class="value">${flight.mail.toLocaleString()} kg</div>
+                    <div class="value">✉️ ${flight.mail.toLocaleString()} kg</div>
                     <div class="label">Mail</div>
                 </div>
             `;
@@ -1016,7 +1013,7 @@ function renderSingleFlight(flight) {
     if (flight.remarks) {
         html += `
             <div class="special-box">
-                <div class="header">Remarks</div>
+                <div class="header">📝 Remarks</div>
                 <div class="details">${flight.remarks}</div>
             </div>
         `;
@@ -1172,29 +1169,22 @@ async function saveAsPNG() {
         label.textContent = 'Saving...';
         saveBtn.disabled = true;
 
-        // Create a wrapper with padding for the shadow
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = `
-            padding: 40px;
-            background-color: #0d0d0d;
-            display: inline-block;
+        // Clone the card for rendering
+        const cardClone = outputCard.cloneNode(true);
+        cardClone.style.cssText = `
             position: absolute;
             left: -9999px;
             top: 0;
+            animation: none;
         `;
-
-        // Clone the card and ensure styles are applied
-        const cardClone = outputCard.cloneNode(true);
-        cardClone.style.animation = 'none';
-        wrapper.appendChild(cardClone);
-        document.body.appendChild(wrapper);
+        document.body.appendChild(cardClone);
 
         // Wait a frame for styles to apply
         await new Promise(resolve => setTimeout(resolve, 50));
 
-        // Render to canvas
-        const canvas = await html2canvas(wrapper, {
-            backgroundColor: '#0d0d0d',
+        // Render to canvas - just the card, no wrapper
+        const canvas = await html2canvas(cardClone, {
+            backgroundColor: null,
             scale: 2,
             logging: false,
             useCORS: true,
@@ -1202,7 +1192,7 @@ async function saveAsPNG() {
         });
 
         // Clean up
-        document.body.removeChild(wrapper);
+        document.body.removeChild(cardClone);
 
         // Generate filename with flight number if available
         let filename = 'squawk';
@@ -1246,29 +1236,22 @@ async function copyImageToClipboard() {
         label.textContent = 'Copying...';
         copyImageBtn.disabled = true;
 
-        // Create a wrapper with padding for the shadow
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = `
-            padding: 40px;
-            background-color: #0d0d0d;
-            display: inline-block;
+        // Clone the card for rendering
+        const cardClone = outputCard.cloneNode(true);
+        cardClone.style.cssText = `
             position: absolute;
             left: -9999px;
             top: 0;
+            animation: none;
         `;
-
-        // Clone the card and ensure styles are applied
-        const cardClone = outputCard.cloneNode(true);
-        cardClone.style.animation = 'none';
-        wrapper.appendChild(cardClone);
-        document.body.appendChild(wrapper);
+        document.body.appendChild(cardClone);
 
         // Wait a frame for styles to apply
         await new Promise(resolve => setTimeout(resolve, 50));
 
-        // Render to canvas
-        const canvas = await html2canvas(wrapper, {
-            backgroundColor: '#0d0d0d',
+        // Render to canvas - just the card, no wrapper
+        const canvas = await html2canvas(cardClone, {
+            backgroundColor: null,
             scale: 2,
             logging: false,
             useCORS: true,
@@ -1276,7 +1259,7 @@ async function copyImageToClipboard() {
         });
 
         // Clean up
-        document.body.removeChild(wrapper);
+        document.body.removeChild(cardClone);
 
         // Copy to clipboard
         canvas.toBlob(async (blob) => {
