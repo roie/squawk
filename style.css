@@ -1,0 +1,309 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'JetBrains Mono', monospace;
+    background-color: #0d0d0d;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.tagline {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+/* Input section */
+.input-section {
+    margin-bottom: 2rem;
+}
+
+#input-text {
+    width: 100%;
+    min-height: 200px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    background-color: #f5f5f5;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    resize: vertical;
+    margin-bottom: 1rem;
+}
+
+#input-text::placeholder {
+    color: #999;
+}
+
+#input-text:focus {
+    outline: 2px solid #4a9eff;
+    outline-offset: 2px;
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #4a9eff;
+    color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #3a8eef;
+}
+
+.btn-secondary {
+    background-color: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #444;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #3a3a3a;
+}
+
+/* Output section */
+.output-section {
+    margin-top: 2rem;
+}
+
+/* Card styling - Carbon.now.sh inspired */
+.card {
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
+    border-radius: 12px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 8px 25px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    position: relative;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.dot.red {
+    background-color: #ff5f56;
+}
+
+.dot.yellow {
+    background-color: #ffbd2e;
+}
+
+.dot.green {
+    background-color: #27ca40;
+}
+
+.card-title {
+    font-size: 0.85rem;
+    color: #888;
+    font-weight: 500;
+}
+
+.card-body {
+    padding: 1.5rem;
+    min-height: 200px;
+}
+
+.watermark {
+    text-align: right;
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+/* Flight sections */
+.flight-section {
+    margin-bottom: 1.5rem;
+}
+
+.flight-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.section-header.arriving {
+    color: #4ade80;
+}
+
+.section-header.departing {
+    color: #60a5fa;
+}
+
+/* Flight info */
+.flight-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.flight-number {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.flight-origin {
+    color: #aaa;
+    font-size: 0.85rem;
+}
+
+.flight-date {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+/* Info boxes grid */
+.info-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.info-box {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+    min-width: 80px;
+}
+
+.info-box .icon {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-box .value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.info-box .label {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 0.25rem;
+}
+
+/* Passenger count boxes */
+.pax-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.pax-box {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    min-width: 70px;
+}
+
+.pax-box .count {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.pax-box .type {
+    font-size: 0.65rem;
+    color: #888;
+}
+
+/* Special info boxes (wheelchair, connecting, etc) */
+.special-box {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.special-box .header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.special-box .details {
+    font-size: 0.8rem;
+    color: #aaa;
+}

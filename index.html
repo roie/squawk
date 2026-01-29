@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squawk - Airline Ops Message Translator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Squawk</h1>
+            <p class="tagline">Translate airline ops messages into plain English</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <textarea
+                    id="input-text"
+                    placeholder="Paste your airline ops message here...
+
+Example:
+*FI603*  🇮🇸 26 Jan
+REG:TF-ICJ  (7M8)
+ETA: 17:45
+Gate: C39A
+Pax count: C13 M113 INF1
+TTL=127"></textarea>
+                <div class="button-group">
+                    <button id="translate-btn" class="btn btn-primary">Translate</button>
+                    <button id="copy-btn" class="btn btn-secondary" disabled>Copy to Clipboard</button>
+                    <button id="save-btn" class="btn btn-secondary" disabled>Save as PNG</button>
+                </div>
+            </section>
+
+            <section class="output-section" id="output-section" style="display: none;">
+                <div class="card" id="output-card">
+                    <div class="card-header">
+                        <div class="window-controls">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <span class="card-title">squawk</span>
+                    </div>
+                    <div class="card-body" id="card-body">
+                        <!-- Parsed flight info will be inserted here -->
+                    </div>
+                    <div class="watermark">built by roie</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
