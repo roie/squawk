@@ -1,8 +1,8 @@
 /* ============================================================================
    SQUAWK - Airline Ops Message Translator
+   Design focused on CLARITY and READABILITY
    ============================================================================ */
 
-/* Reset and base styles */
 * {
     margin: 0;
     padding: 0;
@@ -10,46 +10,35 @@
 }
 
 :root {
-    /* Colors */
-    --bg-dark: #0d0d0d;
-    --bg-card: #1a1a2e;
-    --bg-card-alt: #16213e;
-    --bg-input: #f8f8f8;
-    --text-primary: #ffffff;
-    --text-secondary: #b0b0b0;
-    --text-muted: #666666;
-    --accent-blue: #4a9eff;
-    --accent-green: #4ade80;
-    --accent-red: #ff5f56;
-    --accent-yellow: #ffbd2e;
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-light: rgba(255, 255, 255, 0.12);
+    /* Functional colors - semantic meaning only */
+    --bg-dark: #0a0a0a;
+    --bg-card: #111113;
+    --bg-input: #fafafa;
+    --bg-box: rgba(255, 255, 255, 0.03);
 
-    /* Shadows */
-    --shadow-card:
-        0 25px 80px rgba(0, 0, 0, 0.55),
-        0 10px 30px rgba(0, 0, 0, 0.35),
-        0 0 1px rgba(255, 255, 255, 0.1);
+    --text-primary: #e8e8e8;
+    --text-secondary: #999;
+    --text-muted: #555;
+    --text-label: #777;
 
-    /* Spacing */
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    /* Semantic colors */
+    --color-arrival: #22c55e;
+    --color-departure: #3b82f6;
+    --color-warning: #f59e0b;
+
+    --border-color: rgba(255, 255, 255, 0.08);
+
+    --radius: 6px;
+    --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 body {
-    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
-    background-color: var(--bg-dark);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-dark);
     color: var(--text-secondary);
     min-height: 100vh;
     padding: 2rem;
     line-height: 1.5;
-    /* Subtle grid pattern for depth */
-    background-image:
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: 50px 50px;
-    background-position: center center;
 }
 
 /* ============================================================================
@@ -57,36 +46,29 @@ body {
    ============================================================================ */
 
 .container {
-    max-width: 720px;
+    max-width: 680px;
     margin: 0 auto;
 }
 
-/* Header */
 header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
 }
 
 header h1 {
-    font-size: 2.25rem;
+    font-size: 1.75rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 50%, #ffffff 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    margin-bottom: 0.25rem;
 }
 
 .tagline {
     color: var(--text-muted);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
 }
 
 /* ============================================================================
-   INPUT SECTION
+   INPUT
    ============================================================================ */
 
 .input-section {
@@ -95,47 +77,42 @@ header h1 {
 
 #input-text {
     width: 100%;
-    min-height: 220px;
-    padding: 1.25rem;
+    min-height: 200px;
+    padding: 1rem;
     font-family: inherit;
-    font-size: 0.875rem;
-    background-color: var(--bg-input);
+    font-size: 0.8rem;
+    background: var(--bg-input);
     color: #1a1a1a;
     border: none;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius);
     resize: vertical;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     line-height: 1.6;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 #input-text::placeholder {
-    color: #9a9a9a;
+    color: #888;
 }
 
 #input-text:focus {
-    outline: none;
-    box-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.06),
-        0 0 0 3px rgba(74, 158, 255, 0.3);
+    outline: 2px solid var(--color-departure);
+    outline-offset: 1px;
 }
 
-/* Buttons */
 .button-group {
     display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .btn {
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1.25rem;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: opacity 0.15s;
 }
 
 .btn:disabled {
@@ -144,92 +121,12 @@ header h1 {
 }
 
 .btn-primary {
-    background-color: var(--accent-blue);
-    color: var(--text-primary);
+    background: var(--text-primary);
+    color: var(--bg-dark);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background-color: #3d8ce6;
-    transform: translateY(-1px);
-}
-
-.btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.btn-secondary {
-    background-color: #252525;
-    color: var(--text-secondary);
-    border: 1px solid #3a3a3a;
-}
-
-.btn-secondary:hover:not(:disabled) {
-    background-color: #2f2f2f;
-    border-color: #4a4a4a;
-}
-
-/* ============================================================================
-   ACTION BUTTONS (Below Card)
-   ============================================================================ */
-
-.action-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.btn-action {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.7rem 1.25rem;
-    background: linear-gradient(180deg, #2a2a3a 0%, #1f1f2e 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-md);
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-action:hover:not(:disabled) {
-    background: linear-gradient(180deg, #353548 0%, #2a2a3a 100%);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: var(--text-primary);
-    transform: translateY(-1px);
-}
-
-.btn-action:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.btn-action:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.btn-action .btn-icon {
-    font-size: 1rem;
-    line-height: 1;
-}
-
-.btn-action .btn-label {
-    line-height: 1;
-}
-
-/* Success state for buttons */
-.btn-action.success {
-    background: linear-gradient(180deg, #1a4d2e 0%, #143d24 100%);
-    border-color: rgba(74, 222, 128, 0.3);
-    color: #4ade80;
-}
-
-.btn-action.success .btn-icon::before {
-    content: '✓';
+    opacity: 0.9;
 }
 
 /* ============================================================================
@@ -241,80 +138,52 @@ header h1 {
 }
 
 .card {
-    background: linear-gradient(165deg, #1e1e3f 0%, #1a1a2e 50%, #151525 100%);
-    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    border-radius: var(--radius);
     box-shadow: var(--shadow-card);
-    overflow: hidden;
-    position: relative;
+    border: 1px solid var(--border-color);
 }
 
-/* Subtle inner glow effect */
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 200px;
-    background: radial-gradient(ellipse at 50% 0%, rgba(74, 158, 255, 0.08) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-/* Window Chrome Header */
 .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 16px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.25) 100%);
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .window-controls {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    box-shadow: inset 0 -1px 1px rgba(0,0,0,0.2);
 }
 
-.dot.red {
-    background: linear-gradient(180deg, #ff6058 0%, #e5443c 100%);
-}
-
-.dot.yellow {
-    background: linear-gradient(180deg, #ffbe2f 0%, #dea123 100%);
-}
-
-.dot.green {
-    background: linear-gradient(180deg, #2aca41 0%, #1aab31 100%);
-}
+.dot.red { background: #ff5f56; }
+.dot.yellow { background: #ffbd2e; }
+.dot.green { background: #27c93f; }
 
 .card-title {
-    font-size: 0.8rem;
-    color: #5a5a7a;
+    font-size: 0.7rem;
+    color: var(--text-muted);
     font-weight: 500;
     letter-spacing: 0.05em;
 }
 
-/* Card Body */
 .card-body {
-    padding: 1.5rem;
-    min-height: 150px;
+    padding: 1.25rem;
 }
 
-/* Watermark */
 .watermark {
     text-align: right;
-    padding: 0.75rem 1.25rem;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.2);
-    font-style: italic;
-    letter-spacing: 0.02em;
+    padding: 0.5rem 1rem;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0.5;
 }
 
 /* ============================================================================
@@ -322,134 +191,143 @@ header h1 {
    ============================================================================ */
 
 .flight-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
 }
 
 .flight-section:last-child {
     margin-bottom: 0;
 }
 
-/* Section Header - ARRIVING / DEPARTING */
+/* Section Header */
 .section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0;
-    margin-bottom: 1.25rem;
+    display: inline-block;
+    padding: 0.3rem 0.6rem;
+    margin-bottom: 1rem;
     font-weight: 600;
-    font-size: 0.85rem;
-    letter-spacing: 0.1em;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    border-top: 2px solid;
-    border-bottom: 2px solid;
+    border-radius: 3px;
 }
 
 .section-header.arriving {
-    color: var(--accent-green);
-    border-color: rgba(74, 222, 128, 0.4);
-    background: linear-gradient(90deg, rgba(74, 222, 128, 0.08) 0%, transparent 100%);
+    color: var(--color-arrival);
+    background: rgba(34, 197, 94, 0.12);
 }
 
 .section-header.departing {
-    color: var(--accent-blue);
-    border-color: rgba(74, 158, 255, 0.4);
-    background: linear-gradient(90deg, rgba(74, 158, 255, 0.08) 0%, transparent 100%);
+    color: var(--color-departure);
+    background: rgba(59, 130, 246, 0.12);
 }
 
-/* Flight Title Row */
+/* Flight Title */
 .flight-title {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.25rem;
+    align-items: baseline;
+    margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .flight-number {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
-    letter-spacing: -0.01em;
 }
 
 .flight-origin {
     color: var(--text-secondary);
-    font-size: 0.85rem;
-    margin-top: 0.3rem;
-}
-
-.flight-airline {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.2rem;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
 }
 
 .flight-date {
     color: var(--text-muted);
-    font-size: 0.85rem;
-    text-align: right;
-    white-space: nowrap;
+    font-size: 0.75rem;
 }
 
 /* ============================================================================
-   INFO BOXES GRID
+   DATA ROWS - Clear labeled information
    ============================================================================ */
 
-.info-grid {
+.data-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: 1.5rem;
     margin-bottom: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.info-grid:empty,
-.pax-grid:empty {
-    display: none;
-    margin: 0;
-}
-
-.info-grid:last-child {
+.data-row:last-child {
+    border-bottom: none;
     margin-bottom: 0;
 }
 
-.info-box {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    padding: 0.75rem 1rem;
-    min-width: 90px;
-    transition: background-color 0.15s ease;
+.data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
 }
 
-.info-box:hover {
-    background: rgba(255, 255, 255, 0.06);
+.data-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.data-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.data-value.large {
+    font-size: 1.1rem;
+}
+
+.data-value.muted {
+    color: var(--text-muted);
+}
+
+/* ============================================================================
+   INFO GRID - For flight details
+   ============================================================================ */
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.info-box {
+    background: var(--bg-box);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.75rem;
 }
 
 .info-box .icon {
-    font-size: 0.9rem;
-    margin-bottom: 0.35rem;
-    opacity: 0.9;
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
 }
 
 .info-box .value {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
 .info-box .label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--text-muted);
-    margin-top: 0.3rem;
+    margin-top: 0.2rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-}
-
-/* NIL boxes - muted appearance */
-.info-box.nil {
-    opacity: 0.7;
 }
 
 .info-box.nil .value {
@@ -457,69 +335,71 @@ header h1 {
 }
 
 /* ============================================================================
-   PASSENGER COUNT BOXES
+   PASSENGER TABLE - Clear breakdown
    ============================================================================ */
+
+.pax-section {
+    margin-bottom: 1rem;
+}
+
+.pax-section-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
 
 .pax-grid {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-bottom: 1rem;
 }
 
 .pax-box {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    padding: 0.6rem 0.9rem;
+    background: var(--bg-box);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.8rem;
     text-align: center;
-    min-width: 72px;
-    transition: all 0.15s ease;
-}
-
-.pax-box:hover {
-    background: rgba(255, 255, 255, 0.06);
+    min-width: 65px;
+    flex: 1;
 }
 
 .pax-box .count {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: var(--text-primary);
-    line-height: 1.1;
+    line-height: 1;
 }
 
 .pax-box .type {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-top: 0.25rem;
+    letter-spacing: 0.03em;
+    margin-top: 0.3rem;
 }
 
-/* Total box - highlighted */
 .pax-box.total {
-    background: rgba(74, 158, 255, 0.12);
-    border-color: rgba(74, 158, 255, 0.3);
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.2);
 }
 
 .pax-box.total .count {
-    color: var(--accent-blue);
-}
-
-.pax-box.total .type {
-    color: rgba(74, 158, 255, 0.7);
+    color: var(--color-departure);
 }
 
 /* ============================================================================
-   SPECIAL SERVICE BOXES
+   SPECIAL INFO BLOCKS - No decorative borders
    ============================================================================ */
 
 .special-box {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.6rem;
+    background: var(--bg-box);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .special-box:last-child {
@@ -527,374 +407,146 @@ header h1 {
 }
 
 .special-box .header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--text-primary);
+    font-weight: 500;
 }
 
 .special-box .details {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    margin-top: 0.25rem;
-    padding-left: 1.5rem;
+    margin-top: 0.2rem;
 }
 
-/* Wheelchair boxes - purple accent */
-.special-box.wheelchair {
-    border-left: 3px solid rgba(168, 85, 247, 0.6);
-    background: rgba(168, 85, 247, 0.05);
+.special-box .subtext {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
 }
 
-.special-box.wheelchair .header {
-    color: #c084fc;
+/* Warning styling for special assistance */
+.special-box.assist {
+    background: rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.15);
 }
 
-/* Connecting/Transfer boxes - blue accent */
-.special-box.transfer {
-    border-left: 3px solid rgba(74, 158, 255, 0.6);
-    background: rgba(74, 158, 255, 0.05);
-}
-
-.special-box.transfer .header {
-    color: #60a5fa;
-}
-
-/* Other service boxes - teal accent */
-.special-box.service {
-    border-left: 3px solid rgba(45, 212, 191, 0.6);
-    background: rgba(45, 212, 191, 0.05);
-}
-
-.special-box.service .header {
-    color: #2dd4bf;
-}
-
-/* Remarks box - yellow accent */
-.special-box.remarks {
-    background: rgba(255, 193, 7, 0.06);
-    border-color: rgba(255, 193, 7, 0.2);
-    border-left: 3px solid rgba(255, 193, 7, 0.6);
-}
-
-.special-box.remarks .header {
-    color: #ffc107;
+.special-box.assist .header {
+    color: var(--color-warning);
 }
 
 /* ============================================================================
-   RESPONSIVE ADJUSTMENTS
+   ACTION BUTTONS
    ============================================================================ */
 
-/* Tablet */
-@media (max-width: 768px) {
-    body {
-        padding: 1.5rem;
-    }
-
-    .container {
-        max-width: 100%;
-    }
-
-    .info-grid {
-        gap: 0.5rem;
-    }
-
-    .info-box {
-        min-width: 85px;
-        flex: 1 1 calc(33% - 0.5rem);
-    }
-
-    .pax-box {
-        flex: 1 1 calc(25% - 0.5rem);
-    }
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
 }
 
-/* Mobile */
+.btn-action {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-action:hover:not(:disabled) {
+    background: var(--bg-box);
+    color: var(--text-primary);
+}
+
+.btn-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-action.success {
+    border-color: rgba(34, 197, 94, 0.3);
+    color: var(--color-arrival);
+}
+
+.btn-action .btn-icon {
+    font-size: 0.85rem;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
 @media (max-width: 600px) {
     body {
         padding: 1rem;
     }
 
     header h1 {
-        font-size: 1.75rem;
-    }
-
-    .tagline {
-        font-size: 0.8rem;
-    }
-
-    #input-text {
-        min-height: 180px;
-        padding: 1rem;
-        font-size: 0.8rem;
+        font-size: 1.5rem;
     }
 
     .card-body {
         padding: 1rem;
     }
 
-    .card-header {
-        padding: 12px 14px;
-    }
-
-    .section-header {
-        font-size: 0.75rem;
-        padding: 0.5rem 0;
-    }
-
     .flight-title {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.25rem;
     }
 
     .flight-date {
-        text-align: left;
-    }
-
-    .flight-number {
-        font-size: 1.15rem;
-    }
-
-    .flight-origin {
-        font-size: 0.8rem;
+        order: -1;
     }
 
     .info-grid {
-        gap: 0.4rem;
-    }
-
-    .info-box {
-        min-width: 0;
-        flex: 1 1 calc(50% - 0.4rem);
-        padding: 0.6rem 0.75rem;
-    }
-
-    .info-box .value {
-        font-size: 0.9rem;
-    }
-
-    .info-box .label {
-        font-size: 0.6rem;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .pax-grid {
-        gap: 0.4rem;
+        flex-wrap: wrap;
     }
 
     .pax-box {
-        min-width: 0;
-        flex: 1 1 calc(25% - 0.4rem);
-        padding: 0.5rem 0.6rem;
+        min-width: calc(50% - 0.2rem);
+        flex: 0 0 calc(50% - 0.2rem);
     }
 
-    .pax-box .count {
-        font-size: 1.2rem;
-    }
-
-    .pax-box .type {
-        font-size: 0.55rem;
-    }
-
-    .special-box {
-        padding: 0.6rem 0.75rem;
-    }
-
-    .special-box .header {
-        font-size: 0.8rem;
-    }
-
-    .special-box .details {
-        font-size: 0.75rem;
-        padding-left: 1.25rem;
-    }
-
-    .button-group {
-        flex-direction: column;
-    }
-
-    .btn {
-        width: 100%;
-        text-align: center;
-        justify-content: center;
+    .data-row {
+        gap: 1rem;
     }
 
     .action-buttons {
         flex-direction: column;
-        gap: 0.5rem;
     }
 
     .btn-action {
-        width: 100%;
         justify-content: center;
     }
-
-    .watermark {
-        font-size: 0.65rem;
-        padding: 0.5rem 1rem;
-    }
 }
 
-/* Small mobile */
-@media (max-width: 380px) {
+/* ============================================================================
+   PRINT / EXPORT STYLES
+   ============================================================================ */
+
+@media print {
     body {
-        padding: 0.75rem;
+        background: white;
+        padding: 0;
     }
 
-    .info-box {
-        flex: 1 1 100%;
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
     }
 
-    .pax-box {
-        flex: 1 1 calc(50% - 0.4rem);
+    .action-buttons {
+        display: none;
     }
-}
-
-/* ============================================================================
-   TRANSITIONS & HOVER STATES
-   ============================================================================ */
-
-/* Global transition for interactive elements */
-.btn,
-.btn-action,
-.info-box,
-.pax-box,
-.special-box {
-    transition: all 0.2s ease;
-}
-
-/* Info box hover */
-.info-box:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.18);
-    transform: translateY(-1px);
-}
-
-/* Pax box hover */
-.pax-box:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.18);
-    transform: translateY(-1px);
-}
-
-.pax-box.total:hover {
-    background: rgba(74, 158, 255, 0.18);
-    border-color: rgba(74, 158, 255, 0.4);
-}
-
-/* Special box hover */
-.special-box:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.special-box.wheelchair:hover {
-    background: rgba(168, 85, 247, 0.08);
-}
-
-.special-box.transfer:hover {
-    background: rgba(74, 158, 255, 0.08);
-}
-
-.special-box.service:hover {
-    background: rgba(45, 212, 191, 0.08);
-}
-
-.special-box.remarks:hover {
-    background: rgba(255, 193, 7, 0.1);
-}
-
-/* Card subtle glow on hover */
-.card {
-    transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-    box-shadow:
-        0 25px 80px rgba(0, 0, 0, 0.55),
-        0 10px 30px rgba(0, 0, 0, 0.35),
-        0 0 1px rgba(255, 255, 255, 0.15),
-        0 0 40px rgba(74, 158, 255, 0.05);
-}
-
-/* ============================================================================
-   ANIMATIONS
-   ============================================================================ */
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.flight-section {
-    animation: fadeIn 0.3s ease-out forwards;
-}
-
-.flight-section:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.flight-section:nth-child(3) {
-    animation-delay: 0.2s;
-}
-
-/* Card entrance animation */
-.output-section .card {
-    animation: fadeIn 0.4s ease-out forwards;
-}
-
-/* Action buttons entrance */
-.action-buttons {
-    animation: fadeIn 0.4s ease-out 0.2s both;
-}
-
-/* Staggered info box animation */
-.info-box,
-.pax-box,
-.special-box {
-    animation: slideIn 0.3s ease-out both;
-}
-
-.info-box:nth-child(1),
-.pax-box:nth-child(1) { animation-delay: 0.05s; }
-.info-box:nth-child(2),
-.pax-box:nth-child(2) { animation-delay: 0.1s; }
-.info-box:nth-child(3),
-.pax-box:nth-child(3) { animation-delay: 0.15s; }
-.info-box:nth-child(4),
-.pax-box:nth-child(4) { animation-delay: 0.2s; }
-.info-box:nth-child(5),
-.pax-box:nth-child(5) { animation-delay: 0.25s; }
-.info-box:nth-child(6) { animation-delay: 0.3s; }
-
-.special-box:nth-child(1) { animation-delay: 0.1s; }
-.special-box:nth-child(2) { animation-delay: 0.15s; }
-.special-box:nth-child(3) { animation-delay: 0.2s; }
-.special-box:nth-child(4) { animation-delay: 0.25s; }
-
-/* ============================================================================
-   UTILITIES
-   ============================================================================ */
-
-/* Ensure proper emoji rendering */
-.icon,
-.btn-icon {
-    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }

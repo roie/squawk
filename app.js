@@ -773,6 +773,7 @@ function renderFlights(flights) {
 
 /**
  * Render a single flight to HTML
+ * Focus: CLARITY - turning chaos into readable information
  */
 function renderSingleFlight(flight) {
     const isArrival = flight.type === 'arrival';
@@ -790,30 +791,26 @@ function renderSingleFlight(flight) {
         routeDisplay = `${flight.flag}`;
     }
 
-    // Airline name display
-    let airlineDisplay = flight.airlineName ? `<div class="flight-airline">${flight.airlineName}</div>` : '';
-
     let html = `
         <div class="section-header ${headerClass}">
             ${headerIcon} ${headerText}
         </div>
         <div class="flight-title">
             <div>
-                <div class="flight-number">✈️ ${flight.number || 'Unknown'}</div>
+                <div class="flight-number">${flight.number || 'Unknown'}</div>
                 ${routeDisplay ? `<div class="flight-origin">${routeDisplay}</div>` : ''}
             </div>
             ${flight.date ? `<div class="flight-date">${flight.date}</div>` : ''}
         </div>
     `;
 
-    // ===== INFO BOXES (Aircraft, Gate, Time) =====
+    // ===== FLIGHT INFO (Aircraft, Gate, Time) =====
     let infoBoxes = '';
 
     // Aircraft registration and type
     if (flight.registration) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">🛩️</div>
                 <div class="value">${flight.registration}</div>
                 <div class="label">${flight.aircraft || 'Aircraft'}</div>
             </div>
@@ -824,9 +821,8 @@ function renderSingleFlight(flight) {
     if (flight.gate) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">📍</div>
                 <div class="value">${flight.gate}</div>
-                <div class="label">Gate</div>
+                <div class="label">Arrival Gate</div>
             </div>
         `;
     }
@@ -835,7 +831,6 @@ function renderSingleFlight(flight) {
     if (flight.stand) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">🅿️</div>
                 <div class="value">${flight.stand}</div>
                 <div class="label">Stand</div>
             </div>
@@ -846,20 +841,18 @@ function renderSingleFlight(flight) {
     if (flight.counters) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">📍</div>
                 <div class="value">${flight.counters}</div>
-                <div class="label">Counters</div>
+                <div class="label">Check-in Counters</div>
             </div>
         `;
     }
 
     // Time (scheduled)
     const time = flight.eta || flight.sta || flight.std || flight.etd;
-    const timeLabel = flight.eta ? 'ETA' : flight.sta ? 'STA' : flight.std ? 'STD' : flight.etd ? 'ETD' : '';
+    const timeLabel = flight.eta ? 'Estimated Arrival' : flight.sta ? 'Scheduled Arrival' : flight.std ? 'Scheduled Departure' : flight.etd ? 'Estimated Departure' : '';
     if (time) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">⏰</div>
                 <div class="value">${time}</div>
                 <div class="label">${timeLabel}</div>
             </div>
@@ -868,11 +861,10 @@ function renderSingleFlight(flight) {
 
     // Actual time
     const actualTime = flight.ata || flight.atd;
-    const actualLabel = flight.ata ? 'ATA' : 'ATD';
+    const actualLabel = flight.ata ? 'Actual Arrival' : 'Actual Departure';
     if (actualTime) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">✅</div>
                 <div class="value">${actualTime}</div>
                 <div class="label">${actualLabel}</div>
             </div>
@@ -883,22 +875,21 @@ function renderSingleFlight(flight) {
     if (flight.lateral) {
         infoBoxes += `
             <div class="info-box">
-                <div class="icon">🎫</div>
-                <div class="value">Belt ${flight.lateral}</div>
-                <div class="label">Lateral</div>
+                <div class="value">${flight.lateral}</div>
+                <div class="label">Baggage Belt</div>
             </div>
         `;
     }
 
-    // Only add info grid if there's content
     if (infoBoxes) {
         html += `<div class="info-grid">${infoBoxes}</div>`;
     }
 
-    // ===== PASSENGER COUNTS =====
+    // ===== PASSENGERS ON BOARD =====
     if (flight.paxBusiness !== undefined || flight.paxEconomy !== undefined ||
         flight.infants !== undefined || flight.children !== undefined || flight.total !== undefined) {
-        html += '<div class="pax-grid">';
+
+        html += '<div class="pax-section"><div class="pax-section-label">Passengers on Board</div><div class="pax-grid">';
 
         if (flight.paxBusiness !== undefined) {
             html += `<div class="pax-box"><div class="count">${flight.paxBusiness}</div><div class="type">Business</div></div>`;
@@ -910,24 +901,22 @@ function renderSingleFlight(flight) {
             html += `<div class="pax-box"><div class="count">${flight.children}</div><div class="type">Children</div></div>`;
         }
         if (flight.infants !== undefined) {
-            html += `<div class="pax-box"><div class="count">${flight.infants}</div><div class="type">Infant</div></div>`;
+            html += `<div class="pax-box"><div class="count">${flight.infants}</div><div class="type">Infants</div></div>`;
         }
         if (flight.total !== undefined) {
-            html += `<div class="pax-box total"><div class="count">${flight.total}</div><div class="type">Total</div></div>`;
+            html += `<div class="pax-box total"><div class="count">${flight.total}</div><div class="type">Total Pax</div></div>`;
         }
 
-        html += '</div>';
+        html += '</div></div>';
     }
 
-    // ===== SPECIAL SERVICES =====
-
-    // Wheelchairs (can have multiple types)
+    // ===== SPECIAL ASSISTANCE =====
     if (flight.wheelchairs && flight.wheelchairs.length > 0) {
         for (const wc of flight.wheelchairs) {
             html += `
-                <div class="special-box wheelchair">
-                    <div class="header">♿ ${wc.count} ${wc.name}</div>
-                    <div class="details">${wc.detail}</div>
+                <div class="special-box assist">
+                    <div class="header">♿ ${wc.count}× Wheelchair Assistance Required</div>
+                    <div class="details">${wc.name} — ${wc.detail}</div>
                 </div>
             `;
         }
@@ -937,8 +926,8 @@ function renderSingleFlight(flight) {
     if (flight.specialServices && flight.specialServices.length > 0) {
         for (const svc of flight.specialServices) {
             html += `
-                <div class="special-box service">
-                    <div class="header">${svc.icon} ${svc.count} ${svc.name}</div>
+                <div class="special-box assist">
+                    <div class="header">${svc.icon} ${svc.count}× ${svc.name}</div>
                 </div>
             `;
         }
@@ -949,9 +938,9 @@ function renderSingleFlight(flight) {
     // Connecting passengers (outbound)
     if (flight.connecting) {
         html += `
-            <div class="special-box transfer">
-                <div class="header">🔄 ${flight.connecting.count} connecting</div>
-                <div class="details">→ ${flight.connecting.flight} @ ${flight.connecting.time}${flight.connecting.destinationName ? ` to ${flight.connecting.destinationName}` : ''}</div>
+            <div class="special-box">
+                <div class="header">${flight.connecting.count} Passengers Connecting</div>
+                <div class="details">Next flight: ${flight.connecting.flight} at ${flight.connecting.time}${flight.connecting.destinationName ? ` to ${flight.connecting.destinationName}` : ''}</div>
             </div>
         `;
     }
@@ -959,11 +948,11 @@ function renderSingleFlight(flight) {
     // Incoming transfers (from other airlines)
     if (flight.incomingTransfers && flight.incomingTransfers.length > 0) {
         const transferText = flight.incomingTransfers
-            .map(t => `${t.count} ${t.airlineName}`)
+            .map(t => `${t.count} from ${t.airlineName}`)
             .join(', ');
         html += `
-            <div class="special-box transfer">
-                <div class="header">🔄 Incoming transfers</div>
+            <div class="special-box">
+                <div class="header">Incoming Transfer Passengers</div>
                 <div class="details">${transferText}</div>
             </div>
         `;
@@ -975,56 +964,45 @@ function renderSingleFlight(flight) {
     if (hasBaggageCargo) {
         html += '<div class="info-grid">';
 
-        // Bags
         if (flight.bags) {
             html += `
                 <div class="info-box">
-                    <div class="icon">🧳</div>
                     <div class="value">${flight.bags}</div>
-                    <div class="label">Bags</div>
+                    <div class="label">Checked Bags</div>
                 </div>
             `;
         }
 
-        // Carousel (separate box for clarity)
         if (flight.carousel) {
-            let carouselValue = flight.carousel;
             html += `
                 <div class="info-box">
-                    <div class="icon">🔄</div>
-                    <div class="value">${carouselValue}</div>
-                    <div class="label">Carousel${flight.carouselNote ? ' (' + flight.carouselNote + ')' : ''}</div>
+                    <div class="value">${flight.carousel}</div>
+                    <div class="label">Baggage Carousel${flight.carouselNote ? ' (' + flight.carouselNote + ')' : ''}</div>
                 </div>
             `;
         }
 
-        // Cargo
         if (flight.cargo) {
             html += `
                 <div class="info-box">
-                    <div class="icon">📦</div>
                     <div class="value">${flight.cargo.toLocaleString()} kg</div>
-                    <div class="label">Cargo</div>
+                    <div class="label">Cargo Weight</div>
                 </div>
             `;
         }
 
-        // Cargo NIL
         if (flight.cargoNil) {
             html += `
                 <div class="info-box nil">
-                    <div class="icon">📦</div>
-                    <div class="value">NIL</div>
-                    <div class="label">No cargo</div>
+                    <div class="value">None</div>
+                    <div class="label">No Cargo</div>
                 </div>
             `;
         }
 
-        // Mail
         if (flight.mail) {
             html += `
                 <div class="info-box">
-                    <div class="icon">✉️</div>
                     <div class="value">${flight.mail.toLocaleString()} kg</div>
                     <div class="label">Mail</div>
                 </div>
@@ -1037,8 +1015,8 @@ function renderSingleFlight(flight) {
     // ===== REMARKS =====
     if (flight.remarks) {
         html += `
-            <div class="special-box remarks">
-                <div class="header">📝 Remarks</div>
+            <div class="special-box">
+                <div class="header">Remarks</div>
                 <div class="details">${flight.remarks}</div>
             </div>
         `;
