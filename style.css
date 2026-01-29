@@ -158,6 +158,70 @@ header h1 {
 }
 
 /* ============================================================================
+   ACTION BUTTONS (Below Card)
+   ============================================================================ */
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.25rem;
+    background: linear-gradient(180deg, #2a2a3a 0%, #1f1f2e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover:not(:disabled) {
+    background: linear-gradient(180deg, #353548 0%, #2a2a3a 100%);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.btn-action:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-action .btn-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.btn-action .btn-label {
+    line-height: 1;
+}
+
+/* Success state for buttons */
+.btn-action.success {
+    background: linear-gradient(180deg, #1a4d2e 0%, #143d24 100%);
+    border-color: rgba(74, 222, 128, 0.3);
+    color: #4ade80;
+}
+
+.btn-action.success .btn-icon::before {
+    content: '✓';
+}
+
+/* ============================================================================
    OUTPUT CARD
    ============================================================================ */
 

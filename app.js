@@ -263,6 +263,7 @@ const flagToCountry = {
 const inputText = document.getElementById('input-text');
 const translateBtn = document.getElementById('translate-btn');
 const copyBtn = document.getElementById('copy-btn');
+const copyImageBtn = document.getElementById('copy-image-btn');
 const saveBtn = document.getElementById('save-btn');
 const outputSection = document.getElementById('output-section');
 const cardBody = document.getElementById('card-body');
@@ -274,6 +275,7 @@ const outputCard = document.getElementById('output-card');
 
 translateBtn.addEventListener('click', translate);
 copyBtn.addEventListener('click', copyToClipboard);
+copyImageBtn.addEventListener('click', copyImageToClipboard);
 saveBtn.addEventListener('click', saveAsPNG);
 
 // ============================================================================
@@ -287,14 +289,22 @@ function translate() {
     const flights = parseFlights(input);
     if (flights.length === 0) return;
 
+    // Store for export functions
+    lastParsedFlights = flights;
+
     // Log parsed data for debugging
     console.log('Parsed flights:', flights);
 
     renderFlights(flights);
 
+    // Show output and enable buttons
     outputSection.style.display = 'block';
     copyBtn.disabled = false;
+    copyImageBtn.disabled = false;
     saveBtn.disabled = false;
+
+    // Scroll to output
+    outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ============================================================================
@@ -1023,46 +1033,270 @@ function renderSingleFlight(flight) {
     return html;
 }
 
-// Copy card to clipboard
+// ============================================================================
+// EXPORT FUNCTIONS
+// ============================================================================
+
+// Store parsed flights for text export
+let lastParsedFlights = [];
+
+/**
+ * Generate a plain text summary of parsed flights
+ */
+function generateTextSummary(flights) {
+    let text = '';
+
+    flights.forEach((flight, index) => {
+        if (index > 0) text += '\n' + '─'.repeat(40) + '\n\n';
+
+        const typeEmoji = flight.type === 'arrival' ? '🛬' : '🛫';
+        const typeText = flight.type === 'arrival' ? 'ARRIVING' : 'DEPARTING';
+
+        text += `${typeEmoji} ${typeText}\n`;
+        text += `Flight: ${flight.number || 'Unknown'}`;
+        if (flight.airlineName) text += ` (${flight.airlineName})`;
+        text += '\n';
+
+        if (flight.date) text += `Date: ${flight.date}\n`;
+
+        // Route
+        if (flight.origin && flight.destination) {
+            text += `Route: ${flight.origin} → ${flight.destination}`;
+            text += ` (${flight.originName} → ${flight.destinationName})\n`;
+        } else if (flight.country) {
+            text += `From: ${flight.country}\n`;
+        }
+
+        // Aircraft
+        if (flight.registration) {
+            text += `Aircraft: ${flight.registration}`;
+            if (flight.aircraft) text += ` (${flight.aircraft})`;
+            text += '\n';
+        }
+
+        // Time
+        const time = flight.eta || flight.sta || flight.std || flight.etd;
+        const timeLabel = flight.eta ? 'ETA' : flight.sta ? 'STA' : flight.std ? 'STD' : 'ETD';
+        if (time) text += `${timeLabel}: ${time}\n`;
+
+        // Location
+        if (flight.gate) text += `Gate: ${flight.gate}\n`;
+        if (flight.counters) text += `Counters: ${flight.counters}\n`;
+        if (flight.lateral) text += `Lateral: Belt ${flight.lateral}\n`;
+
+        // Passengers
+        if (flight.total || flight.paxBusiness || flight.paxEconomy) {
+            text += '\nPassengers:\n';
+            if (flight.paxBusiness !== undefined) text += `  Business: ${flight.paxBusiness}\n`;
+            if (flight.paxEconomy !== undefined) text += `  Economy: ${flight.paxEconomy}\n`;
+            if (flight.children !== undefined) text += `  Children: ${flight.children}\n`;
+            if (flight.infants !== undefined) text += `  Infants: ${flight.infants}\n`;
+            if (flight.total !== undefined) text += `  Total: ${flight.total}\n`;
+        }
+
+        // Special services
+        if (flight.wheelchairs && flight.wheelchairs.length > 0) {
+            text += '\nSpecial Assistance:\n';
+            flight.wheelchairs.forEach(wc => {
+                text += `  ♿ ${wc.count}x ${wc.name} - ${wc.detail}\n`;
+            });
+        }
+
+        if (flight.specialServices && flight.specialServices.length > 0) {
+            if (!flight.wheelchairs) text += '\nSpecial Services:\n';
+            flight.specialServices.forEach(svc => {
+                text += `  ${svc.icon} ${svc.count}x ${svc.name}\n`;
+            });
+        }
+
+        // Connections
+        if (flight.connecting) {
+            text += `\nConnecting: ${flight.connecting.count} pax → ${flight.connecting.flight}`;
+            text += ` @ ${flight.connecting.time}`;
+            if (flight.connecting.destinationName) text += ` to ${flight.connecting.destinationName}`;
+            text += '\n';
+        }
+
+        if (flight.incomingTransfers && flight.incomingTransfers.length > 0) {
+            const transfers = flight.incomingTransfers.map(t => `${t.count} ${t.airlineName}`).join(', ');
+            text += `Incoming Transfers: ${transfers}\n`;
+        }
+
+        // Baggage & Cargo
+        if (flight.bags) {
+            text += `\nBags: ${flight.bags}`;
+            if (flight.carousel) text += ` (Carousel ${flight.carousel})`;
+            text += '\n';
+        }
+
+        if (flight.cargo) {
+            text += `Cargo: ${flight.cargo.toLocaleString()} kg\n`;
+        } else if (flight.cargoNil) {
+            text += `Cargo: NIL\n`;
+        }
+
+        // Remarks
+        if (flight.remarks) {
+            text += `\nRemarks: ${flight.remarks}\n`;
+        }
+    });
+
+    return text.trim();
+}
+
+/**
+ * Copy text summary to clipboard
+ */
 async function copyToClipboard() {
     try {
-        const canvas = await html2canvas(outputCard, {
-            backgroundColor: '#0d0d0d',
-            scale: 2
-        });
+        const text = generateTextSummary(lastParsedFlights);
 
-        canvas.toBlob(async (blob) => {
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-            ]);
+        await navigator.clipboard.writeText(text);
 
-            // Visual feedback
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = 'Copied!';
-            setTimeout(() => {
-                copyBtn.textContent = originalText;
-            }, 2000);
-        });
+        // Visual feedback
+        const label = copyBtn.querySelector('.btn-label');
+        const originalText = label.textContent;
+        label.textContent = 'Copied!';
+        copyBtn.classList.add('success');
+        setTimeout(() => {
+            label.textContent = originalText;
+            copyBtn.classList.remove('success');
+        }, 2000);
     } catch (err) {
         console.error('Failed to copy:', err);
         alert('Failed to copy to clipboard');
     }
 }
 
-// Save card as PNG
+/**
+ * Save card as PNG image
+ */
 async function saveAsPNG() {
+    const label = saveBtn.querySelector('.btn-label');
+    const originalText = label.textContent;
+
     try {
-        const canvas = await html2canvas(outputCard, {
+        // Show loading state
+        label.textContent = 'Saving...';
+        saveBtn.disabled = true;
+
+        // Create a wrapper with padding for the shadow
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            padding: 40px;
+            background-color: #0d0d0d;
+            display: inline-block;
+        `;
+
+        // Clone the card
+        const cardClone = outputCard.cloneNode(true);
+        wrapper.appendChild(cardClone);
+        document.body.appendChild(wrapper);
+
+        // Render to canvas
+        const canvas = await html2canvas(wrapper, {
             backgroundColor: '#0d0d0d',
-            scale: 2
+            scale: 2,
+            logging: false,
+            useCORS: true
         });
 
+        // Clean up
+        document.body.removeChild(wrapper);
+
+        // Generate filename with flight number if available
+        let filename = 'squawk';
+        if (lastParsedFlights.length > 0 && lastParsedFlights[0].number) {
+            filename += `-${lastParsedFlights[0].number}`;
+        }
+        filename += '.png';
+
+        // Download
         const link = document.createElement('a');
-        link.download = 'squawk-flight-info.png';
+        link.download = filename;
         link.href = canvas.toDataURL('image/png');
         link.click();
+
+        // Visual feedback
+        label.textContent = 'Saved!';
+        saveBtn.classList.add('success');
+        setTimeout(() => {
+            label.textContent = originalText;
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('success');
+        }, 2000);
+
     } catch (err) {
         console.error('Failed to save:', err);
+        label.textContent = originalText;
+        saveBtn.disabled = false;
         alert('Failed to save as PNG');
+    }
+}
+
+/**
+ * Copy card as PNG image to clipboard
+ */
+async function copyImageToClipboard() {
+    const label = copyImageBtn.querySelector('.btn-label');
+    const originalText = label.textContent;
+
+    try {
+        // Show loading state
+        label.textContent = 'Copying...';
+        copyImageBtn.disabled = true;
+
+        // Create a wrapper with padding for the shadow
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            padding: 40px;
+            background-color: #0d0d0d;
+            display: inline-block;
+        `;
+
+        // Clone the card
+        const cardClone = outputCard.cloneNode(true);
+        wrapper.appendChild(cardClone);
+        document.body.appendChild(wrapper);
+
+        // Render to canvas
+        const canvas = await html2canvas(wrapper, {
+            backgroundColor: '#0d0d0d',
+            scale: 2,
+            logging: false,
+            useCORS: true
+        });
+
+        // Clean up
+        document.body.removeChild(wrapper);
+
+        // Copy to clipboard
+        canvas.toBlob(async (blob) => {
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+
+                // Visual feedback
+                label.textContent = 'Copied!';
+                copyImageBtn.classList.add('success');
+                setTimeout(() => {
+                    label.textContent = originalText;
+                    copyImageBtn.disabled = false;
+                    copyImageBtn.classList.remove('success');
+                }, 2000);
+            } catch (clipErr) {
+                console.error('Clipboard write failed:', clipErr);
+                label.textContent = originalText;
+                copyImageBtn.disabled = false;
+                alert('Failed to copy image. Try "Save as PNG" instead.');
+            }
+        }, 'image/png');
+
+    } catch (err) {
+        console.error('Failed to copy image:', err);
+        label.textContent = originalText;
+        copyImageBtn.disabled = false;
+        alert('Failed to copy image');
     }
 }

@@ -27,12 +27,14 @@ Example:
 REG:TF-ICJ  (7M8)
 ETA: 17:45
 Gate: C39A
+Cargo: 2195KGS
 Pax count: C13 M113 INF1
-TTL=127"></textarea>
+TTL=127
+Special: 1WCHR
+Bags: 107
+Carousel: 10"></textarea>
                 <div class="button-group">
                     <button id="translate-btn" class="btn btn-primary">Translate</button>
-                    <button id="copy-btn" class="btn btn-secondary" disabled>Copy to Clipboard</button>
-                    <button id="save-btn" class="btn btn-secondary" disabled>Save as PNG</button>
                 </div>
             </section>
 
@@ -50,6 +52,21 @@ TTL=127"></textarea>
                         <!-- Parsed flight info will be inserted here -->
                     </div>
                     <div class="watermark">built by roie</div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="copy-btn" class="btn btn-action" disabled>
+                        <span class="btn-icon">📋</span>
+                        <span class="btn-label">Copy Text</span>
+                    </button>
+                    <button id="copy-image-btn" class="btn btn-action" disabled>
+                        <span class="btn-icon">🖼️</span>
+                        <span class="btn-label">Copy Image</span>
+                    </button>
+                    <button id="save-btn" class="btn btn-action" disabled>
+                        <span class="btn-icon">💾</span>
+                        <span class="btn-label">Save PNG</span>
+                    </button>
                 </div>
             </section>
         </main>
