@@ -44,6 +44,12 @@ body {
     min-height: 100vh;
     padding: 2rem;
     line-height: 1.5;
+    /* Subtle grid pattern for depth */
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+    background-position: center center;
 }
 
 /* ============================================================================
@@ -67,6 +73,11 @@ header h1 {
     color: var(--text-primary);
     margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 50%, #ffffff 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .tagline {
@@ -235,6 +246,18 @@ header h1 {
     box-shadow: var(--shadow-card);
     overflow: hidden;
     position: relative;
+}
+
+/* Subtle inner glow effect */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(74, 158, 255, 0.08) 0%, transparent 70%);
+    pointer-events: none;
 }
 
 /* Window Chrome Header */
@@ -812,11 +835,11 @@ header h1 {
 @keyframes slideIn {
     from {
         opacity: 0;
-        transform: translateX(-10px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0);
     }
 }
 
@@ -839,16 +862,32 @@ header h1 {
 
 /* Action buttons entrance */
 .action-buttons {
-    animation: fadeIn 0.4s ease-out 0.2s forwards;
-    opacity: 0;
+    animation: fadeIn 0.4s ease-out 0.2s both;
 }
 
 /* Staggered info box animation */
 .info-box,
 .pax-box,
 .special-box {
-    animation: slideIn 0.25s ease-out forwards;
+    animation: slideIn 0.3s ease-out both;
 }
+
+.info-box:nth-child(1),
+.pax-box:nth-child(1) { animation-delay: 0.05s; }
+.info-box:nth-child(2),
+.pax-box:nth-child(2) { animation-delay: 0.1s; }
+.info-box:nth-child(3),
+.pax-box:nth-child(3) { animation-delay: 0.15s; }
+.info-box:nth-child(4),
+.pax-box:nth-child(4) { animation-delay: 0.2s; }
+.info-box:nth-child(5),
+.pax-box:nth-child(5) { animation-delay: 0.25s; }
+.info-box:nth-child(6) { animation-delay: 0.3s; }
+
+.special-box:nth-child(1) { animation-delay: 0.1s; }
+.special-box:nth-child(2) { animation-delay: 0.15s; }
+.special-box:nth-child(3) { animation-delay: 0.2s; }
+.special-box:nth-child(4) { animation-delay: 0.25s; }
 
 /* ============================================================================
    UTILITIES

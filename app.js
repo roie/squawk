@@ -337,26 +337,37 @@ function parseFlights(input) {
 
 /**
  * Detect flight type based on keywords
- * Priority: explicit keywords > route format > emoji > unknown
+ * Priority: emoji > explicit keywords > route format > fallbacks
  */
 function detectFlightType(block) {
-    const upper = block.toUpperCase();
-
-    // Check for arrival indicators (higher priority)
-    const arrivalKeywords = ['ETA:', 'ETA ', 'STA:', 'STA ', 'ARRIVING', 'ARR ', 'ARR:'];
-    for (const kw of arrivalKeywords) {
-        if (upper.includes(kw)) return 'arrival';
-    }
-
-    // Check for departure indicators
-    const departureKeywords = ['STD:', 'STD ', 'ETD:', 'ETD ', 'DEPARTING', 'DEP ', 'DEP:'];
-    for (const kw of departureKeywords) {
-        if (upper.includes(kw)) return 'departure';
-    }
-
-    // Check emoji indicators
+    // Check emoji indicators FIRST (most reliable, unambiguous)
     if (block.includes('🛬')) return 'arrival';
     if (block.includes('🛫')) return 'departure';
+
+    const upper = block.toUpperCase();
+
+    // Check for arrival indicators using word boundaries
+    // Note: Avoid loose patterns like 'ARR ' which match 'CARR ' in 'IN CARR PAX'
+    const arrivalPatterns = [
+        /\bETA[:\s]/,      // ETA: or ETA followed by space
+        /\bSTA[:\s]/,      // STA: or STA followed by space
+        /\bARRIVING\b/,    // Full word ARRIVING
+        /\bARR:/           // ARR: (time format)
+    ];
+    for (const pattern of arrivalPatterns) {
+        if (pattern.test(upper)) return 'arrival';
+    }
+
+    // Check for departure indicators using word boundaries
+    const departurePatterns = [
+        /\bSTD[:\s]/,      // STD: or STD followed by space
+        /\bETD[:\s]/,      // ETD: or ETD followed by space
+        /\bDEPARTING\b/,   // Full word DEPARTING
+        /\bDEP:/           // DEP: (time format)
+    ];
+    for (const pattern of departurePatterns) {
+        if (pattern.test(upper)) return 'departure';
+    }
 
     // Route format (YYZ-KEF) indicates departure
     if (/[A-Z]{3}\s*[-–—→]\s*[A-Z]{3}/.test(block)) return 'departure';
@@ -594,8 +605,8 @@ function parsePassengers(block, flight) {
         const economyMatch = paxLine.match(/[MY](\d+)/i);
         if (economyMatch) flight.paxEconomy = parseInt(economyMatch[1]);
 
-        // Infants: INF1, 2INFT, INFT2
-        const infantMatch = paxLine.match(/(\d+)\s*(?:INF|INFT)|(?:INF|INFT)\s*(\d+)/i);
+        // Infants: INF1, 2INFT, INFT2 (no space allowed between number and INF)
+        const infantMatch = paxLine.match(/(\d+)(?:INF|INFT)|(?:INF|INFT)(\d+)/i);
         if (infantMatch) flight.infants = parseInt(infantMatch[1] || infantMatch[2]);
     }
 
