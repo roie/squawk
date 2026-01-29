@@ -1,3 +1,7 @@
+/* ============================================================================
+   SQUAWK - Airline Ops Message Translator
+   ============================================================================ */
+
 /* Reset and base styles */
 * {
     margin: 0;
@@ -5,63 +9,104 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'JetBrains Mono', monospace;
-    background-color: #0d0d0d;
-    color: #e0e0e0;
-    min-height: 100vh;
-    padding: 2rem;
+:root {
+    /* Colors */
+    --bg-dark: #0d0d0d;
+    --bg-card: #1a1a2e;
+    --bg-card-alt: #16213e;
+    --bg-input: #f8f8f8;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-muted: #666666;
+    --accent-blue: #4a9eff;
+    --accent-green: #4ade80;
+    --accent-red: #ff5f56;
+    --accent-yellow: #ffbd2e;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-light: rgba(255, 255, 255, 0.12);
+
+    /* Shadows */
+    --shadow-card:
+        0 25px 80px rgba(0, 0, 0, 0.55),
+        0 10px 30px rgba(0, 0, 0, 0.35),
+        0 0 1px rgba(255, 255, 255, 0.1);
+
+    /* Spacing */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
 }
 
+body {
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+    background-color: var(--bg-dark);
+    color: var(--text-secondary);
+    min-height: 100vh;
+    padding: 2rem;
+    line-height: 1.5;
+}
+
+/* ============================================================================
+   LAYOUT
+   ============================================================================ */
+
 .container {
-    max-width: 800px;
+    max-width: 720px;
     margin: 0 auto;
 }
 
 /* Header */
 header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 header h1 {
-    font-size: 2.5rem;
+    font-size: 2.25rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
 }
 
 .tagline {
-    color: #888;
-    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
 }
 
-/* Input section */
+/* ============================================================================
+   INPUT SECTION
+   ============================================================================ */
+
 .input-section {
     margin-bottom: 2rem;
 }
 
 #input-text {
     width: 100%;
-    min-height: 200px;
-    padding: 1rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    background-color: #f5f5f5;
+    min-height: 220px;
+    padding: 1.25rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    background-color: var(--bg-input);
     color: #1a1a1a;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     resize: vertical;
     margin-bottom: 1rem;
+    line-height: 1.6;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 #input-text::placeholder {
-    color: #999;
+    color: #9a9a9a;
 }
 
 #input-text:focus {
-    outline: 2px solid #4a9eff;
-    outline-offset: 2px;
+    outline: none;
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.06),
+        0 0 0 3px rgba(74, 158, 255, 0.3);
 }
 
 /* Buttons */
@@ -72,62 +117,70 @@ header h1 {
 }
 
 .btn {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 
 .btn-primary {
-    background-color: #4a9eff;
-    color: #ffffff;
+    background-color: var(--accent-blue);
+    color: var(--text-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background-color: #3a8eef;
+    background-color: #3d8ce6;
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .btn-secondary {
-    background-color: #2a2a2a;
-    color: #e0e0e0;
-    border: 1px solid #444;
+    background-color: #252525;
+    color: var(--text-secondary);
+    border: 1px solid #3a3a3a;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background-color: #3a3a3a;
+    background-color: #2f2f2f;
+    border-color: #4a4a4a;
 }
 
-/* Output section */
+/* ============================================================================
+   OUTPUT CARD
+   ============================================================================ */
+
 .output-section {
     margin-top: 2rem;
 }
 
-/* Card styling - Carbon.now.sh inspired */
 .card {
-    background: linear-gradient(145deg, #1a1a2e, #16213e);
-    border-radius: 12px;
-    box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.5),
-        0 8px 25px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(165deg, #1e1e3f 0%, #1a1a2e 50%, #151525 100%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
     position: relative;
 }
 
+/* Window Chrome Header */
 .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.25) 100%);
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .window-controls {
@@ -139,125 +192,181 @@ header h1 {
     width: 12px;
     height: 12px;
     border-radius: 50%;
+    box-shadow: inset 0 -1px 1px rgba(0,0,0,0.2);
 }
 
 .dot.red {
-    background-color: #ff5f56;
+    background: linear-gradient(180deg, #ff6058 0%, #e5443c 100%);
 }
 
 .dot.yellow {
-    background-color: #ffbd2e;
+    background: linear-gradient(180deg, #ffbe2f 0%, #dea123 100%);
 }
 
 .dot.green {
-    background-color: #27ca40;
+    background: linear-gradient(180deg, #2aca41 0%, #1aab31 100%);
 }
 
 .card-title {
-    font-size: 0.85rem;
-    color: #888;
+    font-size: 0.8rem;
+    color: #5a5a7a;
     font-weight: 500;
+    letter-spacing: 0.05em;
 }
 
+/* Card Body */
 .card-body {
     padding: 1.5rem;
-    min-height: 200px;
+    min-height: 150px;
 }
 
+/* Watermark */
 .watermark {
     text-align: right;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.25rem;
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.2);
+    font-style: italic;
+    letter-spacing: 0.02em;
 }
 
-/* Flight sections */
+/* ============================================================================
+   FLIGHT SECTIONS
+   ============================================================================ */
+
 .flight-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .flight-section:last-child {
     margin-bottom: 0;
 }
 
+/* Section Header - ARRIVING / DEPARTING */
 .section-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-    border-top: 2px solid rgba(255, 255, 255, 0.2);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    margin-bottom: 1.25rem;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-top: 2px solid;
+    border-bottom: 2px solid;
 }
 
 .section-header.arriving {
-    color: #4ade80;
+    color: var(--accent-green);
+    border-color: rgba(74, 222, 128, 0.4);
+    background: linear-gradient(90deg, rgba(74, 222, 128, 0.08) 0%, transparent 100%);
 }
 
 .section-header.departing {
-    color: #60a5fa;
+    color: var(--accent-blue);
+    border-color: rgba(74, 158, 255, 0.4);
+    background: linear-gradient(90deg, rgba(74, 158, 255, 0.08) 0%, transparent 100%);
 }
 
-/* Flight info */
+/* Flight Title Row */
 .flight-title {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .flight-number {
-    font-size: 1.2rem;
+    font-size: 1.35rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .flight-origin {
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 0.85rem;
+    margin-top: 0.3rem;
+}
+
+.flight-airline {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
 }
 
 .flight-date {
-    color: #888;
+    color: var(--text-muted);
     font-size: 0.85rem;
+    text-align: right;
+    white-space: nowrap;
 }
 
-/* Info boxes grid */
+/* ============================================================================
+   INFO BOXES GRID
+   ============================================================================ */
+
 .info-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.6rem;
     margin-bottom: 1rem;
 }
 
+.info-grid:empty {
+    display: none;
+}
+
 .info-box {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.75rem;
-    min-width: 80px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    min-width: 90px;
+    transition: background-color 0.15s ease;
+}
+
+.info-box:hover {
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .info-box .icon {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+    opacity: 0.9;
 }
 
 .info-box .value {
     font-size: 1rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
+    line-height: 1.2;
 }
 
 .info-box .label {
-    font-size: 0.7rem;
-    color: #888;
-    margin-top: 0.25rem;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
-/* Passenger count boxes */
+/* NIL boxes - muted appearance */
+.info-box.nil {
+    opacity: 0.7;
+}
+
+.info-box.nil .value {
+    color: var(--text-muted);
+}
+
+/* ============================================================================
+   PASSENGER COUNT BOXES
+   ============================================================================ */
+
 .pax-grid {
     display: flex;
     flex-wrap: wrap;
@@ -266,32 +375,62 @@ header h1 {
 }
 
 .pax-box {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.9rem;
     text-align: center;
-    min-width: 70px;
+    min-width: 72px;
+    transition: all 0.15s ease;
+}
+
+.pax-box:hover {
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .pax-box .count {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
+    line-height: 1.1;
 }
 
 .pax-box .type {
-    font-size: 0.65rem;
-    color: #888;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.25rem;
 }
 
-/* Special info boxes (wheelchair, connecting, etc) */
+/* Total box - highlighted */
+.pax-box.total {
+    background: rgba(74, 158, 255, 0.12);
+    border-color: rgba(74, 158, 255, 0.3);
+}
+
+.pax-box.total .count {
+    color: var(--accent-blue);
+}
+
+.pax-box.total .type {
+    color: rgba(74, 158, 255, 0.7);
+}
+
+/* ============================================================================
+   SPECIAL SERVICE BOXES
+   ============================================================================ */
+
 .special-box {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.special-box:last-child {
+    margin-bottom: 1rem;
 }
 
 .special-box .header {
@@ -299,11 +438,126 @@ header h1 {
     align-items: center;
     gap: 0.5rem;
     font-weight: 500;
-    color: #ffffff;
-    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
 }
 
 .special-box .details {
     font-size: 0.8rem;
-    color: #aaa;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    padding-left: 1.5rem;
+}
+
+/* Wheelchair boxes - purple accent */
+.special-box.wheelchair {
+    border-left: 3px solid rgba(168, 85, 247, 0.6);
+    background: rgba(168, 85, 247, 0.05);
+}
+
+.special-box.wheelchair .header {
+    color: #c084fc;
+}
+
+/* Connecting/Transfer boxes - blue accent */
+.special-box.transfer {
+    border-left: 3px solid rgba(74, 158, 255, 0.6);
+    background: rgba(74, 158, 255, 0.05);
+}
+
+.special-box.transfer .header {
+    color: #60a5fa;
+}
+
+/* Other service boxes - teal accent */
+.special-box.service {
+    border-left: 3px solid rgba(45, 212, 191, 0.6);
+    background: rgba(45, 212, 191, 0.05);
+}
+
+.special-box.service .header {
+    color: #2dd4bf;
+}
+
+/* Remarks box - yellow accent */
+.special-box.remarks {
+    background: rgba(255, 193, 7, 0.06);
+    border-color: rgba(255, 193, 7, 0.2);
+    border-left: 3px solid rgba(255, 193, 7, 0.6);
+}
+
+.special-box.remarks .header {
+    color: #ffc107;
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+
+    header h1 {
+        font-size: 1.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .info-box {
+        min-width: 80px;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .pax-box {
+        min-width: 65px;
+    }
+
+    .flight-number {
+        font-size: 1.15rem;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.flight-section {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.flight-section:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.flight-section:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+/* Card entrance animation */
+.output-section .card {
+    animation: fadeIn 0.4s ease-out forwards;
 }
