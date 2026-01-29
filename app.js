@@ -316,8 +316,8 @@ function parseSingleFlight(block) {
     const bagsMatch = block.match(/(?:Bags?|Baggage)[:\s]*(\d+)/i);
     if (bagsMatch) flight.bags = parseInt(bagsMatch[1]);
 
-    // Carousel: Carousel: 10, Carousel: 9might change, Carousel: 12 OVZ: D
-    const carouselMatch = block.match(/Carousel[:\s]*(\d{1,2})\s*([a-z]+.*?)?(?:\s+OVZ[:\s]*([A-Z]))?(?:\n|$)/i);
+    // Carousel: Carousel: 10, Carousel: 9might change, *Carousel*: 12 *OVZ*: D
+    const carouselMatch = block.match(/\*?Carousel\*?[:\s]*(\d{1,2})\s*([a-z]+[^\n*]*)?(?:\s*\*?OVZ\*?[:\s]*([A-Z]))?/i);
     if (carouselMatch) {
         flight.carousel = carouselMatch[1];
         // Check for notes like "might change"
@@ -331,9 +331,10 @@ function parseSingleFlight(block) {
     }
 
     // XQS (bags count in Copa format): XQS: 148 BIN 1,2 & 3
-    const xqsMatch = block.match(/XQS[:\s]*(\d+)/i);
-    if (xqsMatch && !flight.bags) {
-        flight.bags = parseInt(xqsMatch[1]);
+    const xqsMatch = block.match(/\*?XQS\*?[:\s]*(\d+)(?:\s+BIN\s*([^\n]+))?/i);
+    if (xqsMatch) {
+        if (!flight.bags) flight.bags = parseInt(xqsMatch[1]);
+        if (xqsMatch[2]) flight.bagsBin = xqsMatch[2].trim();
     }
 
     // Priority bags: "Priority Bags" followed by counts
@@ -464,6 +465,10 @@ function parsePassengers(block, flight) {
         // Infants: INF1, 2INFT, INFT2, 1INFT (no space allowed between number and INF)
         const infantMatch = paxLine.match(/(\d+)(?:INF|INFT)|(?:INF|INFT)(\d+)/i);
         if (infantMatch) flight.infants = parseInt(infantMatch[1] || infantMatch[2]);
+
+        // Staff/Crew: 2ID, ID2
+        const staffMatch = paxLine.match(/(\d+)\s*ID\b|ID\s*(\d+)/i);
+        if (staffMatch) flight.staff = parseInt(staffMatch[1] || staffMatch[2]);
     }
 
     // Also check for standalone class counts in block
@@ -793,7 +798,8 @@ function renderSingleFlight(flight) {
 
     // ===== PASSENGERS ON BOARD =====
     if (flight.paxBusiness !== undefined || flight.paxEconomy !== undefined ||
-        flight.infants !== undefined || flight.children !== undefined || flight.total !== undefined) {
+        flight.infants !== undefined || flight.children !== undefined ||
+        flight.total !== undefined || flight.staff !== undefined) {
 
         html += '<div class="pax-section"><div class="pax-section-label">👥 Passengers on Board</div><div class="pax-grid">';
 
@@ -808,6 +814,9 @@ function renderSingleFlight(flight) {
         }
         if (flight.infants !== undefined) {
             html += `<div class="pax-box"><div class="count">${flight.infants}</div><div class="type">Infants</div></div>`;
+        }
+        if (flight.staff !== undefined) {
+            html += `<div class="pax-box"><div class="count">${flight.staff}</div><div class="type">Staff</div></div>`;
         }
         if (flight.total !== undefined) {
             html += `<div class="pax-box total"><div class="count">${flight.total}</div><div class="type">Total Pax</div></div>`;
@@ -843,15 +852,22 @@ function renderSingleFlight(flight) {
 
     // Connecting passengers (outbound)
     if (flight.connecting) {
+        let connectingHeader = `${flight.connecting.count} Passengers Connecting`;
         let connectingDetails = '';
+
+        if (flight.connecting.breakdown) {
+            // Show breakdown in header: "5 (1 Air Canada, 3 Porter, 1 WestJet)"
+            const breakdownStr = flight.connecting.breakdown.map(b => `${b.count} ${b.airlineName}`).join(', ');
+            connectingHeader = `${flight.connecting.count} Connecting (${breakdownStr})`;
+        }
+
         if (flight.connecting.flight) {
             connectingDetails = `Next flight: ${flight.connecting.flight} at ${flight.connecting.time}${flight.connecting.destinationName ? ` to ${flight.connecting.destinationName}` : ''}`;
-        } else if (flight.connecting.breakdown) {
-            connectingDetails = flight.connecting.breakdown.map(b => `${b.count} → ${b.airlineName}`).join(', ');
         }
+
         html += `
             <div class="special-box">
-                <div class="header">🔄 ${flight.connecting.count} Passengers Connecting</div>
+                <div class="header">🔄 ${connectingHeader}</div>
                 ${connectingDetails ? `<div class="details">${connectingDetails}</div>` : ''}
             </div>
         `;
@@ -877,23 +893,26 @@ function renderSingleFlight(flight) {
         html += '<div class="info-grid">';
 
         if (flight.bags) {
+            let bagsDisplay = `${flight.bags}`;
+            if (flight.bagsBin) bagsDisplay += ` (Bins ${flight.bagsBin})`;
             let bagsLabel = 'Checked Bags';
             if (flight.priorityBags) bagsLabel += ` • Priority: ${flight.priorityBags}`;
             html += `
                 <div class="info-box">
-                    <div class="value">🧳 ${flight.bags}</div>
+                    <div class="value">🧳 ${bagsDisplay}</div>
                     <div class="label">${bagsLabel}</div>
                 </div>
             `;
         }
 
         if (flight.carousel) {
+            let carouselDisplay = `${flight.carousel}`;
+            if (flight.oversizeBelt) carouselDisplay += ` (Oversize Area ${flight.oversizeBelt})`;
             let carouselLabel = 'Baggage Carousel';
             if (flight.carouselNote) carouselLabel += ` (${flight.carouselNote})`;
-            if (flight.oversizeBelt) carouselLabel += ` • Oversize: ${flight.oversizeBelt}`;
             html += `
                 <div class="info-box">
-                    <div class="value">🔄 ${flight.carousel}</div>
+                    <div class="value">🔄 ${carouselDisplay}</div>
                     <div class="label">${carouselLabel}</div>
                 </div>
             `;
