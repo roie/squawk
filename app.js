@@ -1150,11 +1150,31 @@ async function saveAsPNG() {
         // Clean up
         document.body.removeChild(cardClone);
 
-        // Generate filename with flight number if available
+        // Generate filename: squawk-[FLIGHT(S)]-[DATE].png
         let filename = 'squawk';
-        if (lastParsedFlights.length > 0 && lastParsedFlights[0].number) {
-            filename += `-${lastParsedFlights[0].number}`;
+
+        // Add flight number(s)
+        if (lastParsedFlights.length > 0) {
+            const flightNumbers = lastParsedFlights
+                .filter(f => f.number)
+                .map(f => f.number);
+
+            if (flightNumbers.length === 1) {
+                filename += `-${flightNumbers[0]}`;
+            } else if (flightNumbers.length > 1) {
+                // Turn: combine as [FI603-FI602]
+                filename += `-${flightNumbers.join('-')}`;
+            }
+
+            // Add date from first flight that has one
+            const flightWithDate = lastParsedFlights.find(f => f.date);
+            if (flightWithDate && flightWithDate.date) {
+                // Clean date: "Jan 29" -> "29Jan" or keep as-is
+                const cleanDate = flightWithDate.date.replace(/\s+/g, '');
+                filename += `-${cleanDate}`;
+            }
         }
+
         filename += '.png';
 
         // Download
