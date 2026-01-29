@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Squawk - Airline Ops Message Translator</title>
+    <title>squawk - airline ops translator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -12,38 +12,17 @@
 <body>
     <div class="container">
         <header>
-            <h1>Squawk</h1>
-            <p class="tagline">Translate airline ops messages into plain English</p>
+            <h1>🛫 squawk</h1>
+            <p class="tagline">translate airline ops messages into plain english</p>
         </header>
 
         <main>
             <section class="input-section">
                 <textarea
                     id="input-text"
-                    placeholder="Paste your airline ops message here...
-
-Example (try copying this):
-*FI603*  🇮🇸 26 Jan
-REG:TF-ICJ  (7M8)
-ETA: 17:45
-Gate: C39A
-Cargo: 2195KGS
-Pax count: C13 M113 INF1
-TTL=127
-Special: 1WCHR
-Conx Pax6 :first flight 19:45 PD655 LAS
-Bags: 107
-Carousel: 10
-
-🛫FI602 YYZ-KEF
-STD:19:40
-Pax: C7 M130 2INFT
-TTL=139
-IN CARR PAX: 3AC, 5PD
-Counters: 419-423
-Lateral: 15"></textarea>
+                    placeholder="paste your ops message here..."></textarea>
                 <div class="button-group">
-                    <button id="translate-btn" class="btn btn-primary">Translate</button>
+                    <button id="translate-btn" class="btn btn-primary">✨ translate</button>
                 </div>
             </section>
 
@@ -55,7 +34,7 @@ Lateral: 15"></textarea>
                             <span class="dot yellow"></span>
                             <span class="dot green"></span>
                         </div>
-                        <span class="card-title">squawk</span>
+                        <span class="card-title">🛫 squawk</span>
                     </div>
                     <div class="card-body" id="card-body">
                         <!-- Parsed flight info will be inserted here -->
