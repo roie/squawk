@@ -825,27 +825,33 @@ function renderSingleFlight(flight) {
         html += '</div></div>';
     }
 
-    // ===== SPECIAL ASSISTANCE =====
-    if (flight.wheelchairs && flight.wheelchairs.length > 0) {
-        for (const wc of flight.wheelchairs) {
-            html += `
-                <div class="special-box assist">
-                    <div class="header">♿ ${wc.count}× Wheelchair Assistance Required</div>
-                    <div class="details">${wc.name} — ${wc.detail}</div>
-                </div>
-            `;
-        }
-    }
+    // ===== SPECIAL ASSISTANCE (combined into one card) =====
+    const hasSpecial = (flight.wheelchairs && flight.wheelchairs.length > 0) ||
+                       (flight.specialServices && flight.specialServices.length > 0);
 
-    // Other special services (UMNR, etc)
-    if (flight.specialServices && flight.specialServices.length > 0) {
-        for (const svc of flight.specialServices) {
-            html += `
-                <div class="special-box assist">
-                    <div class="header">${svc.icon} ${svc.count}× ${svc.name}</div>
-                </div>
-            `;
+    if (hasSpecial) {
+        let specialLines = [];
+
+        // Add wheelchairs with full descriptions
+        if (flight.wheelchairs) {
+            for (const wc of flight.wheelchairs) {
+                specialLines.push(`${wc.count}× ${wc.name}`);
+            }
         }
+
+        // Add other services
+        if (flight.specialServices) {
+            for (const svc of flight.specialServices) {
+                specialLines.push(`${svc.count}× ${svc.name}`);
+            }
+        }
+
+        html += `
+            <div class="special-box assist">
+                <div class="header">♿ Special Assistance</div>
+                <div class="details">${specialLines.join(', ')}</div>
+            </div>
+        `;
     }
 
     // ===== CONNECTIONS =====
