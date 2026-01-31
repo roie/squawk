@@ -14,7 +14,10 @@ const outputSection = document.getElementById('output-section');
 const cardBody = document.getElementById('card-body');
 const outputCard = document.getElementById('output-card');
 
-// ============================================================================ 
+// State
+let lastParsedFlights = [];
+
+// ============================================================================
 // FUZZY SEARCH SETUP
 // ============================================================================ 
 
@@ -63,9 +66,7 @@ function detectFlightType(block) {
     return 'unknown';
 }
 
-/* Removed dead code */
-function _unused() { return;
-    const upper = '';
+/*
     const arrivalPatterns = [/ETA[:\s]/, /STA[:\s]/, /ARRIVING/, /ARR:/, /Arr\s*Gate/];
     for (const pattern of arrivalPatterns) { if (pattern.test(upper)) return 'arrival'; }
 
@@ -73,9 +74,7 @@ function _unused() { return;
     for (const pattern of departurePatterns) { if (pattern.test(upper)) return 'departure'; }
 
     if (/Arr\s*Gate|Tow\s*IFC/i.test(block)) return 'arrival';
-    if (/[A-Z]{3}\s*[-–—→]\s*[A-Z]{3}/.test(block)) return 'departure';
-    return 'unknown';
-}
+*/
 
 /**
  * Parse passenger counts
@@ -495,6 +494,7 @@ function renderSingleFlight(flight) {
     const headerIcon = isArrival ? '🛬' : '🛫';
     const headerText = isArrival ? 'ARRIVING' : 'DEPARTING';
 
+    // Build route/origin display
     let routeDisplay = '';
     if (flight.origin && flight.destination) {
         routeDisplay = `${flight.originName} → ${flight.destinationName}`;
@@ -504,13 +504,21 @@ function renderSingleFlight(flight) {
         routeDisplay = `${flight.flag}`;
     }
 
+    // Build time display
+    const time = flight.eta || flight.sta || flight.std || flight.etd;
+    let timeLabel = flight.eta ? 'Estimated Arrival' : flight.sta ? 'Scheduled Arrival' : flight.std ? 'Scheduled Departure' : flight.etd ? 'Estimated Departure' : '';
+    if (flight.etaLocal || flight.staLocal || flight.stdLocal || flight.etdLocal) timeLabel += ' (Local)';
+
     let html = `
         <div class="section-header ${headerClass}">${headerIcon} ${headerText}</div>
         <div class="flight-header">
-            <span class="flight-number">${flight.number || 'Unknown'}</span>
-            ${flight.date ? `<span class="flight-date">${flight.date}</span>` : ''}
+            <div class="flight-info">
+                <span class="flight-number">${flight.number || 'Unknown'}</span>
+                ${routeDisplay ? `<span class="flight-route">• ${routeDisplay}</span>` : ''}
+                ${flight.date ? `<span class="flight-date">• ${flight.date}</span>` : ''}
+            </div>
+            ${time ? `<div class="time-box"><div class="time-label">${timeLabel}</div><div class="time-value">🕐 ${time}</div></div>` : ''}
         </div>
-        ${routeDisplay ? `<div class="flight-route">${routeDisplay}</div>` : ''}
     `;
 
     let infoBoxes = '';
@@ -520,10 +528,6 @@ function renderSingleFlight(flight) {
         if (flight.towGate) label += ` → Tow ${flight.towGate}`;
         infoBoxes += `<div class="info-box"><div class="value">🚪 ${flight.gate}</div><div class="label">${label}</div></div>`;
     }
-    const time = flight.eta || flight.sta || flight.std || flight.etd;
-    let timeLabel = flight.eta ? 'Estimated Arrival' : flight.sta ? 'Scheduled Arrival' : flight.std ? 'Scheduled Departure' : flight.etd ? 'Estimated Departure' : '';
-    if (flight.etaLocal || flight.staLocal || flight.stdLocal || flight.etdLocal) timeLabel += ' (Local)';
-    if (time) infoBoxes += `<div class="info-box"><div class="value">🕐 ${time}</div><div class="label">${timeLabel}</div></div>`;
     if (flight.stand) infoBoxes += `<div class="info-box"><div class="value">🅿️ ${flight.stand}</div><div class="label">Stand</div></div>`;
     if (flight.counters) infoBoxes += `<div class="info-box"><div class="value">🎫 ${flight.counters}</div><div class="label">Check-In Counters</div></div>`;
     if (flight.lateral) infoBoxes += `<div class="info-box"><div class="value">🛄 ${flight.lateral}</div><div class="label">Baggage Belt</div></div>`;
@@ -584,11 +588,9 @@ function renderSingleFlight(flight) {
     return html;
 }
 
-// ============================================================================ 
+// ============================================================================
 // EXPORT FUNCTIONS (PRESERVED)
-// ============================================================================ 
-
-let lastParsedFlights = [];
+// ============================================================================
 
 function generateTextSummary(flights) {
     let text = '';
