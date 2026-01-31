@@ -112,22 +112,41 @@ function parsePassengers(block, flight) {
 function parseWheelchairs(block, flight) {
     const wheelchairs = [];
     const foundTypes = new Set();
-    const copaWchMatch = block.match(/\*?WCHC\*?[:\s]*(\d+)R(?:\s*\+\s*(\d+)C)?/i);
-    if (copaWchMatch) {
-        const rampCount = parseInt(copaWchMatch[1]) || 0;
-        const cabinCount = parseInt(copaWchMatch[2]) || 0;
-        if (rampCount > 0) { wheelchairs.push({ count: rampCount, type: 'WCHR', ...wheelchairTypes['WCHR'] }); foundTypes.add('WCHR'); }
-        if (cabinCount > 0) { wheelchairs.push({ count: cabinCount, type: 'WCHC', ...wheelchairTypes['WCHC'] }); foundTypes.add('WCHC'); }
+
+    // Shorthand format: "9R" or "9R+2C" where R=Ramp, C=Cabin, S=Steps
+    // Can appear after any wheelchair code like "WCHC: 9R" or standalone
+    const shorthandMatch = block.match(/(?:WCHC|WCHR|WCHS|WCH)[:\s]*(\d+)\s*([RCS])(?:\s*[\+&]\s*(\d+)\s*([RCS]))?/i);
+    if (shorthandMatch) {
+        const typeMap = { 'R': 'WCHR', 'C': 'WCHC', 'S': 'WCHS' };
+        const count1 = parseInt(shorthandMatch[1]) || 0;
+        const type1 = typeMap[shorthandMatch[2].toUpperCase()];
+        if (count1 > 0 && type1 && wheelchairTypes[type1]) {
+            wheelchairs.push({ count: count1, type: type1, ...wheelchairTypes[type1] });
+            foundTypes.add(type1);
+        }
+        if (shorthandMatch[3] && shorthandMatch[4]) {
+            const count2 = parseInt(shorthandMatch[3]) || 0;
+            const type2 = typeMap[shorthandMatch[4].toUpperCase()];
+            if (count2 > 0 && type2 && wheelchairTypes[type2]) {
+                wheelchairs.push({ count: count2, type: type2, ...wheelchairTypes[type2] });
+                foundTypes.add(type2);
+            }
+        }
+        // Prevent duplicate matching of WCH codes
+        foundTypes.add('WCHR'); foundTypes.add('WCHC'); foundTypes.add('WCHS');
     }
-    const wchrPattern = /(\d+)\s*(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)|(?:(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)[:\s]*(\d+)?)/gi;
+
+    // Standard formats: "1WCHR", "WCHR: 1", "WCHR 1", "1 WCHR"
+    const standardPattern = /(\d+)\s*(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)\b|\b(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)[:\s]+(\d+)/gi;
     let match;
-    while ((match = wchrPattern.exec(block)) !== null) {
+    while ((match = standardPattern.exec(block)) !== null) {
         const type = (match[2] || match[3]).toUpperCase();
         if (foundTypes.has(type)) continue;
         foundTypes.add(type);
         const count = parseInt(match[1] || match[4]) || 1;
         if (wheelchairTypes[type]) wheelchairs.push({ count, type, ...wheelchairTypes[type] });
     }
+
     if (wheelchairs.length > 0) flight.wheelchairs = wheelchairs;
 }
 
@@ -299,10 +318,12 @@ function fuzzyCorrectLabels(block) {
     const validLabels = new Set([
         'ETA', 'ETD', 'STA', 'STD', 'REG', 'AC REG',
         'Gate', 'Arr Gate', 'Tow Gate',
-        'Pax', 'Pax count', 'TTL', 'Total',
-        'Cargo', 'Bags', 'Baggage', 'Carousel',
+        'Pax', 'Pax count', 'Pax OB', 'TTL', 'Total',
+        'Cargo', 'Bags', 'Baggage', 'Carousel', 'XQS',
         'Special', 'Counters', 'Lateral', 'Belt',
-        'Conx Pax', 'IN CARR PAX', 'Remarks', 'Notes'
+        'Conx Pax', 'IN CARR PAX', 'Remarks', 'Notes',
+        'WCHR', 'WCHS', 'WCHC', 'WCHP', 'BLND', 'DEAF', 'DPNA', 'MAAS',
+        'Flight', 'FLT', 'Date', 'OVZ'
     ]);
 
     const lines = block.split('\n');
