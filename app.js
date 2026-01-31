@@ -604,7 +604,7 @@ function renderSingleFlight(flight) {
             let v = flight.carousel;
             if (flight.carouselNote) v += ` <span class="note">(${flight.carouselNote})</span>`;
             let l = 'Baggage Carousel' + (flight.oversizeBelt ? ` · Oversize: ${flight.oversizeBelt}` : '');
-            html += `<div class="info-box"><div class="value">🔄 ${v}</div><div class="label">${l}</div></div>`;
+            html += `<div class="info-box"><div class="value">🛄 ${v}</div><div class="label">${l}</div></div>`;
         }
         if (flight.cargo) {
             html += `<div class="info-box"><div class="value">📦 ${flight.cargo.toLocaleString()} kg</div><div class="label">Cargo Weight</div></div>`;
