@@ -48,6 +48,11 @@ function translate() {
     copyBtn.disabled = false;
     copyImageBtn.disabled = false;
     saveBtn.disabled = false;
+    
+    // Accessibility
+    copyBtn.setAttribute('aria-disabled', 'false');
+    copyImageBtn.setAttribute('aria-disabled', 'false');
+    saveBtn.setAttribute('aria-disabled', 'false');
 
     // Scroll to output
     outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -65,17 +70,17 @@ function parseFlights(input) {
     // Normalize line endings and clean up input
     const normalized = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-    // Split on flight number patterns:
-    // - *FI603* (asterisk-wrapped)
-    // - 🛫FI602 or 🛬FI602 (emoji prefixed)
-    // Split on flight markers:
-    // - *FI603* (asterisk-wrapped)
-    // - 🛫FI602, 🛬FI602 (emoji prefix)
-    // - FI603 at start of line (bare flight number)
-    // - Flight: CM470 (explicit label)
-    const flightPattern = /(?=\*[A-Z]{2}\d{1,4}\*)|(?=🛫\s*[A-Z]{2}\d{1,4})|(?=🛬\s*[A-Z]{2}\d{1,4})|(?=(?:^|\n)Flight[:\s]+[A-Z]{2}\d{1,4})/m;
-
-    let blocks = normalized.split(flightPattern).filter(b => b.trim());
+    // Split on separators (dashes) or flight number patterns
+    // We explicitly split by the divider line "----------" first if present
+    let blocks = [];
+    if (normalized.includes('----------')) {
+        blocks = normalized.split(/----------+/).filter(b => b.trim());
+    } else {
+        // Fallback to regex splitting if no explicit separators
+        // *FI603*, 🛫FI602, Flight: CM470
+        const flightPattern = /(?=\*[A-Z]{2}\d{1,4}\*)|(?=🛫\s*[A-Z]{2}\d{1,4})|(?=🛬\s*[A-Z]{2}\d{1,4})|(?=(?:^|\n)Flight[:\s]+[A-Z]{2}\d{1,4})/m;
+        blocks = normalized.split(flightPattern).filter(b => b.trim());
+    }
 
     // If no split happened, treat entire input as single flight
     if (blocks.length === 0) {
@@ -96,37 +101,36 @@ function detectFlightType(block) {
 
     const upper = block.toUpperCase();
 
-    // Check for arrival indicators using word boundaries
-    // Note: Avoid loose patterns like 'ARR ' which match 'CARR ' in 'IN CARR PAX'
+    // Check for arrival indicators
     const arrivalPatterns = [
-        /\bETA[:\s]/,      // ETA: or ETA followed by space
-        /\bSTA[:\s]/,      // STA: or STA followed by space
+        /\bETA[:\s]/,      // ETA:
+        /\bSTA[:\s]/,      // STA:
         /\bARRIVING\b/,    // Full word ARRIVING
-        /\bARR:/           // ARR: (time format)
+        /\bARR:/,          // ARR:
+        /\bArr\s*Gate\b/   // Arr Gate
     ];
     for (const pattern of arrivalPatterns) {
         if (pattern.test(upper)) return 'arrival';
     }
 
-    // Check for departure indicators using word boundaries
+    // Check for departure indicators
     const departurePatterns = [
-        /\bSTD[:\s]/,      // STD: or STD followed by space
-        /\bETD[:\s]/,      // ETD: or ETD followed by space
+        /\bSTD[:\s]/,      // STD:
+        /\bETD[:\s]/,      // ETD:
         /\bDEPARTING\b/,   // Full word DEPARTING
-        /\bDEP:/           // DEP: (time format)
+        /\bDEP:/,          // DEP:
+        /\bCounters?[:\s]/ // Counters
     ];
     for (const pattern of departurePatterns) {
         if (pattern.test(upper)) return 'departure';
     }
 
-    // Route format (YYZ-KEF) indicates departure
+    // Route format (YYZ-KEF) indicates departure usually (Origin-Dest)
+    // Tow/Arr Gate strongly implies arrival
+    if (/Arr\s*Gate|Tow\s*IFC/i.test(block)) return 'arrival';
+
+    // Route fallback
     if (/[A-Z]{3}\s*[-–—→]\s*[A-Z]{3}/.test(block)) return 'departure';
-
-    // Carousel/baggage claim suggests arrival
-    if (/carousel/i.test(block)) return 'arrival';
-
-    // Counters/lateral suggests departure
-    if (/counters|lateral/i.test(block)) return 'departure';
 
     return 'unknown';
 }
@@ -156,40 +160,66 @@ function parseSingleFlight(block) {
         const match = block.match(pattern);
         if (match) {
             flight.number = match[1].toUpperCase();
-            // Extract airline code from flight number
-            flight.airlineCode = flight.number.match(/^[A-Z]{2}/)[0];
-            flight.airlineName = airlines[flight.airlineCode] || null;
+            // Extract airline code safely
+            const airlineCodeMatch = flight.number.match(/^[A-Z]{2}/);
+            if (airlineCodeMatch) {
+                flight.airlineCode = airlineCodeMatch[0];
+                flight.airlineName = airlines[flight.airlineCode] || null;
+            }
             break;
         }
     }
 
     // ========== DATE ==========
 
-    // Date formats: "26 Jan", "Jan 26", "28JAN26", "Date: 28JAN26"
+    // Date formats: "24Jan2026", "26 Jan", "Jan 26", "28JAN26", "Date: 28JAN26"
+    // STRICTER PATTERNS: Only match valid months to avoid capturing "YYZ" or "pcs"
+    const months = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
     const datePatterns = [
-        /(\d{1,2})\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{2,4})?\b/i, // 28JAN26 or 28 Jan 26
-        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})(?:\s*,?\s*(\d{2,4}))?\b/i, // Jan 28, 2026
-        /Date[:\s]+(\d{1,2})(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(\d{2,4})?/i // Date: 28JAN26
+        new RegExp(`Date[:\\s]+(\\d{1,2})(${months})(\\d{2,4})?`, 'i'), // Date: 28JAN26
+        new RegExp(`(\\d{1,2})\\s*(${months})\\s*(\\d{2,4})?\\b`, 'i'), // 28 Jan 2026
+        new RegExp(`(${months})\\s*(\\d{1,2})(?:\\s*,?\\s*(\\d{2,4}))?\\b`, 'i'), // Jan 28, 2026
+        new RegExp(`(\\d{1,2})(${months})(\\d{2,4})`, 'i') // 24Jan2026
     ];
 
     for (const pattern of datePatterns) {
         const match = block.match(pattern);
         if (match) {
-            if (pattern === datePatterns[2]) {
-                // Date: 28JAN26 format
-                flight.date = `${match[2]} ${match[1]}`;
-            } else if (pattern === datePatterns[0]) {
-                flight.date = `${match[2]} ${match[1]}`;
-            } else {
-                flight.date = `${match[1]} ${match[2]}`;
+            let day, month, year;
+            // Identify structure based on which group captures the month
+            const g1 = match[1];
+            const g2 = match[2];
+            const g3 = match[3];
+
+            // If group 1 is the month (Pattern 3: Jan 28)
+            if (isNaN(parseInt(g1)) && !isNaN(parseInt(g2))) {
+                month = g1;
+                day = g2;
+                year = g3;
+            } 
+            // If group 2 is the month (Pattern 1, 2, 4: 28 Jan)
+            else if (!isNaN(parseInt(g1)) && isNaN(parseInt(g2))) {
+                day = g1;
+                month = g2;
+                year = g3;
             }
-            break;
+
+            // Normalize year
+            if (!year) {
+                year = new Date().getFullYear();
+            } else if (year.length === 2) {
+                year = '20' + year;
+            }
+
+            if (day && month) {
+                flight.date = `${month} ${day}, ${year}`;
+                break;
+            }
         }
     }
 
     // ========== AIRCRAFT ==========
 
-    // Registration: REG:TF-ICJ, AC REG: HP-1832, Registration: TF-ICJ
     const regPatterns = [
         /(?:AC\s*)?REG[:\s]*([A-Z]{1,2}-?[A-Z0-9]{2,5})/i,
         /Registration[:\s]*([A-Z]{1,2}-?[A-Z0-9]{2,5})/i
@@ -202,7 +232,6 @@ function parseSingleFlight(block) {
         }
     }
 
-    // Aircraft type: (7M8), [738], A/C: 320, Type: 789
     const aircraftPatterns = [
         /\((\d{2,3}[A-Z]?|[A-Z]\d{2}|7M[89]|E\d{2}|CR[9J]|DH4|AT7)\)/i,
         /\[(\d{2,3}[A-Z]?|[A-Z]\d{2}|7M[89])\]/i,
@@ -221,58 +250,55 @@ function parseSingleFlight(block) {
 
     // ========== TIMES ==========
 
-    // ETA, STA (arrivals) - handles "lt" suffix for local time
-    const etaMatch = block.match(/ETA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
-    if (etaMatch) flight.eta = etaMatch[1];
+    // Helper to capture 'lt'
+    const extractTime = (regex) => {
+        const match = block.match(regex);
+        if (match) {
+            const isLocal = (match[0].toLowerCase().includes('lt'));
+            return { time: match[1], local: isLocal };
+        }
+        return null;
+    };
 
-    const staMatch = block.match(/STA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
-    if (staMatch) flight.sta = staMatch[1];
+    const eta = extractTime(/ETA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
+    if (eta) { flight.eta = eta.time; flight.etaLocal = eta.local; }
 
-    // STD, ETD (departures)
-    const stdMatch = block.match(/STD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
-    if (stdMatch) flight.std = stdMatch[1];
+    const sta = extractTime(/STA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
+    if (sta) { flight.sta = sta.time; flight.staLocal = sta.local; }
 
-    const etdMatch = block.match(/ETD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
-    if (etdMatch) flight.etd = etdMatch[1];
+    const std = extractTime(/STD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
+    if (std) { flight.std = std.time; flight.stdLocal = std.local; }
 
-    // Actual times
-    const ataMatch = block.match(/ATA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
-    if (ataMatch) flight.ata = ataMatch[1];
-
-    const atdMatch = block.match(/ATD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
-    if (atdMatch) flight.atd = atdMatch[1];
+    const etd = extractTime(/ETD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i);
+    if (etd) { flight.etd = etd.time; flight.etdLocal = etd.local; }
 
     // ========== LOCATION / GATES ==========
 
-    // Gate: C39A, Gate: **C39A/B39*, Arr Gate: 173// Tow info
+    // Primary Gate
     const gatePatterns = [
-        /Arr\s*Gate[:\s]*(\d{1,3}[A-Z]?)(?:\s*\/\/\s*Tow[^@]*@\s*([^0-9]*\d{1,2}:\d{2}[^,\n]*))?/i,  // Arr Gate: 173// Tow @ time
-        /Gate[:\s*]*\**([\w\d]+(?:\/[\w\d]+)?)\**/i  // Gate: C39A or **C39A/B40*
+        /\*?Arr\s*Gate\*?[:\s]*([A-Z0-9]+(?:\s*\/\s*[A-Z0-9]+)?)/i,
+        /Gate[:\s*]*\**([A-Z0-9]+(?:\s*\/\s*[A-Z0-9]+)?)\**/i
     ];
     for (const pattern of gatePatterns) {
         const match = block.match(pattern);
         if (match) {
-            flight.gate = match[1].replace(/\*+/g, '').toUpperCase();
-            // Check for tow info
-            if (match[2]) {
-                flight.towInfo = match[2].trim();
-            }
+            flight.gate = match[1].replace(/\*+/g, '').replace(/\s+/g, '').toUpperCase();
             break;
         }
     }
 
-    // Check for IFC/tow gate info separately
-    const towMatch = block.match(/Tow\s*(?:IFC\s*)?Gate[:\s]*(\d{1,3}[A-Z]?)\s*@?\s*([\d:]+(?:lt)?)?/i);
-    if (towMatch && !flight.towInfo) {
+    // Tow information
+    const towMatch = block.match(/Tow\s*(?:IFC\s*)?\*?Gate\*?[:\s]*([A-Z0-9]+)\s*@\s*(?:Between\s*)?(\d{1,2}:\d{2})(?:lt)?/i);
+    if (towMatch) {
         flight.towGate = towMatch[1];
-        if (towMatch[2]) flight.towTime = towMatch[2].replace(/lt$/i, '');
+        flight.towTime = towMatch[2];
     }
 
-    // Stand/Bay: Stand 42, Bay 15
+    // Stand/Bay
     const standMatch = block.match(/(?:Stand|Bay)[:\s]*(\d{1,3}[A-Z]?)/i);
     if (standMatch) flight.stand = standMatch[1];
 
-    // Route: YYZ-KEF, YYZ → KEF, YYZ to KEF
+    // Route
     const routeMatch = block.match(/([A-Z]{3})\s*[-–—→]\s*([A-Z]{3})/);
     if (routeMatch) {
         flight.origin = routeMatch[1];
@@ -281,154 +307,46 @@ function parseSingleFlight(block) {
         flight.destinationName = airports[routeMatch[2]] || routeMatch[2];
     }
 
-    // Counters (departure): Counters: 419-423, Check-in: 10-15
+    // Counters
     const countersMatch = block.match(/(?:Counters?|Check-?in)[:\s]*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?)/i);
     if (countersMatch) flight.counters = countersMatch[1].replace(/\s+/g, '');
 
-    // Lateral/Belt (departure baggage drop): Lateral:15, Belt: 3
+    // Lateral/Belt
     const lateralMatch = block.match(/(?:Lateral|Belt)[:\s]*(\d{1,2})/i);
     if (lateralMatch) flight.lateral = lateralMatch[1];
 
     // ========== PASSENGERS ==========
 
-    // Parse passenger counts - multiple formats supported
     parsePassengers(block, flight);
 
-    // ========== SPECIAL SERVICES ==========
+    // ========== SPECIAL SERVICES & BAGGAGE ==========
 
-    // Parse wheelchair and mobility assistance
     parseWheelchairs(block, flight);
-
-    // Parse other special services (UMNR, etc)
     parseSpecialServices(block, flight);
-
-    // ========== CONNECTIONS ==========
-
-    // Connecting passengers: Conx Pax6 :first flight 19:45 PD655 LAs
     parseConnections(block, flight);
-
-    // Incoming transfers: IN CARR PAX : 3AC ,5PD
     parseIncomingTransfers(block, flight);
-
-    // ========== BAGGAGE ==========
-
-    // Bags count: Bags: 107, Baggage: 95
-    const bagsMatch = block.match(/(?:Bags?|Baggage)[:\s]*(\d+)/i);
-    if (bagsMatch) flight.bags = parseInt(bagsMatch[1]);
-
-    // Carousel: Carousel: 10, Carousel: 9might change, *Carousel*: 12 *OVZ*: D
-    const carouselMatch = block.match(/\*?Carousel\*?[:\s]*(\d{1,2})\s*([a-z]+[^\n*]*)?(?:\s*\*?OVZ\*?[:\s]*([A-Z]))?/i);
-    if (carouselMatch) {
-        flight.carousel = carouselMatch[1];
-        // Check for notes like "might change"
-        if (carouselMatch[2] && carouselMatch[2].trim()) {
-            flight.carouselNote = carouselMatch[2].trim();
-        }
-        // Check for oversize baggage area
-        if (carouselMatch[3]) {
-            flight.oversizeBelt = carouselMatch[3];
-        }
-    }
-
-    // XQS (bags count in Copa format): XQS: 148 BIN 1,2 & 3
-    const xqsMatch = block.match(/\*?XQS\*?[:\s]*(\d+)(?:\s+BIN\s*([^\n]+))?/i);
-    if (xqsMatch) {
-        if (!flight.bags) flight.bags = parseInt(xqsMatch[1]);
-        if (xqsMatch[2]) flight.bagsBin = xqsMatch[2].trim();
-    }
-
-    // Priority bags: "Priority Bags" followed by counts
-    const priorityMatch = block.match(/Priority\s*Bags[:\s]*\n?\s*(\d+[^\n]+)/i);
+    parseBaggageAndCargo(block, flight); // Consolidated function
+    
+    // Priority Bags (New)
+    const priorityMatch = block.match(/\*Priority\s*Bags\*[\s\S]*?(\d+[\s\S]*?)(?:Please|We really|Thank)/i);
     if (priorityMatch) {
-        flight.priorityBags = priorityMatch[1].trim();
+        // Clean up the priority bags text
+        let pBags = priorityMatch[1].replace(/\n/g, ' ').trim();
+        flight.priorityBags = pBags;
     }
 
-    // ========== CARGO ==========
+    // ========== REMARKS ==========
 
-    // Cargo weight: Cargo: **2195KGS **, CARGO: 1500 KG, CARGO: 98 Pzs/ 2,062.00 Kgs
-    const cargoPatterns = [
-        /\*?Cargo\*?[:\s*]*(\d+)\s*(?:KGS?|KG)\b/i,  // 2195KGS
-        /\*?Cargo\*?[:\s*]*\d+\s*(?:Pzs?|pcs)[\/\s]*([0-9,\.]+)\s*(?:KGS?|KG)/i,  // 98 Pzs/ 2,062.00 Kgs
-        /TOTAL[=:\s]*\d+\s*pcs[^0-9]*([0-9,\.]+)\s*kg/i,  // TOTAL =31 pcs 592.0 kg
-        /([0-9,\.]+)\s*kg\s*$/im  // 592.0 kg at end of line
-    ];
-
-    for (const pattern of cargoPatterns) {
-        const match = block.match(pattern);
-        if (match && !flight.cargo) {
-            flight.cargo = parseFloat(match[1].replace(/,/g, ''));
-            break;
-        }
+    const remarksMatch = block.match(/(?:Remarks?|Notes?|Delay)[:\s]*(.+?)(?:\n|$)/i);
+    if (remarksMatch) {
+        flight.remarks = remarksMatch[1].trim();
     }
-
-    // Cargo pieces count
-    const cargoPcsMatch = block.match(/\*?Cargo\*?[:\s*]*(\d+)\s*(?:Pzs?|pcs)/i);
-    if (cargoPcsMatch) {
-        flight.cargoPieces = parseInt(cargoPcsMatch[1]);
-    }
-
-    // Special cargo items (lobsters, live animals, consolidation, etc.)
-    const specialCargoItems = [];
-
-    // Live lobsters: "30pcs LIVELOBSTERS" or "30 pcs LIVE LOBSTERS"
-    const lobsterMatch = block.match(/(\d+)\s*(?:pcs?)?\s*(LIVE\s*LOBSTERS?|LIVELOBSTERS?)/i);
-    if (lobsterMatch) {
-        specialCargoItems.push(`🦞 ${lobsterMatch[1]} Live Lobsters`);
-    }
-
-    // Live animals
-    const animalMatch = block.match(/(\d+)\s*(?:pcs?)?\s*(LIVE\s*ANIMALS?|AVI)/i);
-    if (animalMatch) {
-        specialCargoItems.push(`🐾 ${animalMatch[1]} Live Animals`);
-    }
-
-    // Consolidation shipments
-    const consolidationMatch = block.match(/(\d+)\s*(?:pcs?)?\s*CONSOLIDATION/i);
-    if (consolidationMatch) {
-        specialCargoItems.push(`📦 ${consolidationMatch[1]} Consolidation`);
-    }
-
-    // Dangerous goods
-    const dgrMatch = block.match(/(\d+)\s*(?:pcs?)?\s*(?:DGR|DANGEROUS\s*GOODS)/i);
-    if (dgrMatch) {
-        specialCargoItems.push(`⚠️ ${dgrMatch[1]} Dangerous Goods`);
-    }
-
-    if (specialCargoItems.length > 0) {
-        flight.specialCargo = specialCargoItems;
-    }
-
-    // Parse multi-line cargo section for total weight
-    const multiCargoMatch = block.match(/\*?CARGO\*?\s*:[^\d]*\n[\s\S]*?(?:TOTAL\s*=?\s*)?(\d+)\s*(?:pcs?)[\s\S]*?([\d,\.]+)\s*kg/i);
-    if (multiCargoMatch && !flight.cargo) {
-        flight.cargoPieces = parseInt(multiCargoMatch[1]);
-        flight.cargo = parseFloat(multiCargoMatch[2].replace(/,/g, ''));
-    }
-
-    // Cargo NIL: *CARGO* : NIl, Cargo: NIL, *CARGO* : (followed by nothing meaningful)
-    if (/\*?Cargo\*?[:\s*]*NIL/i.test(block)) {
-        flight.cargoNil = true;
-    }
-
-    // Mail
-    const mailMatch = block.match(/Mail[:\s]*(\d+)\s*(?:KGS?|KG)/i);
-    if (mailMatch) flight.mail = parseInt(mailMatch[1]);
-
-    // ========== COUNTRY / ORIGIN ==========
-
-    // Country flag emoji
+    
+    // Country detection via flags
     const flagMatch = block.match(/[\u{1F1E0}-\u{1F1FF}]{2}/u);
     if (flagMatch) {
         flight.flag = flagMatch[0];
         flight.country = flagToCountry[flagMatch[0]] || null;
-    }
-
-    // ========== REMARKS / NOTES ==========
-
-    // Delay reason, remarks
-    const remarksMatch = block.match(/(?:Remarks?|Notes?|Delay)[:\s]*(.+?)(?:\n|$)/i);
-    if (remarksMatch) {
-        flight.remarks = remarksMatch[1].trim();
     }
 
     return flight;
@@ -438,67 +356,54 @@ function parseSingleFlight(block) {
  * Parse passenger counts from various formats
  */
 function parsePassengers(block, flight) {
-    // Format 1: "Pax count: C13 M113 INF1" or "Pax: C7 M130 2INFT"
-    let paxLineMatch = block.match(/Pax(?:\s+count)?[:\s]*(.+?)(?:\n|$)/i);
-
-    // Format 2: "Pax OB: 160 + 03 INF" (on board with infants separated)
-    const paxOBMatch = block.match(/Pax\s*OB[:\s]*(\d+)\s*\+\s*(\d+)\s*INF/i);
+    // 1. "Pax OB: 157 + *02* INF" (Total + Infants)
+    // Handle asterisks inside the numbers like *02*
+    const paxOBMatch = block.match(/Pax\s*OB[:\s]*(\d+)\s*\+\s*\*?(\d+)\*?\s*INF/i);
     if (paxOBMatch) {
-        flight.total = parseInt(paxOBMatch[1]) + parseInt(paxOBMatch[2]);
-        flight.infants = parseInt(paxOBMatch[2]);
-        // Main count is total - infants
-        const mainPax = parseInt(paxOBMatch[1]);
-        flight.paxEconomy = mainPax; // Assume economy if not broken down
+        const count1 = parseInt(paxOBMatch[1]);
+        const count2 = parseInt(paxOBMatch[2]);
+        flight.total = count1 + count2;
+        flight.infants = count2;
+        // In this format, the first number is usually "adults/seats occupied", so effectively total - infants(lap)
+        // We won't assume Economy unless specified
+        flight.paxMain = count1; 
     }
 
-    if (paxLineMatch && !paxOBMatch) {
-        const paxLine = paxLineMatch[1];
+    // 2. "Pax count: C16 M105 2ID" or "Pax: C14 M125 1INFT"
+    // Regex that looks for the Pax line
+    const paxLineMatch = block.match(/Pax(?:\s+count)?[:\s]*([^\n]+)/i);
+    if (paxLineMatch) {
+        const line = paxLineMatch[1];
 
-        // Business/First class: C13, J5, F2
-        const businessMatch = paxLine.match(/[CJF](\d+)/i);
-        if (businessMatch) flight.paxBusiness = parseInt(businessMatch[1]);
+        // Business (C, J, F)
+        const biz = line.match(/\b[CJF](\d+)\b/);
+        if (biz) flight.paxBusiness = parseInt(biz[1]);
 
-        // Economy: M113, Y95
-        const economyMatch = paxLine.match(/[MY](\d+)/i);
-        if (economyMatch) flight.paxEconomy = parseInt(economyMatch[1]);
+        // Economy (M, Y)
+        const eco = line.match(/\b[MY](\d+)\b/);
+        if (eco) flight.paxEconomy = parseInt(eco[1]);
 
-        // Infants: INF1, 2INFT, INFT2, 1INFT (no space allowed between number and INF)
-        const infantMatch = paxLine.match(/(\d+)(?:INF|INFT)|(?:INF|INFT)(\d+)/i);
-        if (infantMatch) flight.infants = parseInt(infantMatch[1] || infantMatch[2]);
+        // Infants (INF1, 1INFT, *02* INF)
+        const inf = line.match(/(?:INF|INFT)\s*(\d+)|\b(\d+)\s*(?:INF|INFT)/i);
+        if (inf) flight.infants = parseInt(inf[1] || inf[2]);
 
-        // Staff/Crew: 2ID, ID2
-        const staffMatch = paxLine.match(/(\d+)\s*ID\b|ID\s*(\d+)/i);
-        if (staffMatch) flight.staff = parseInt(staffMatch[1] || staffMatch[2]);
+        // Staff (2ID, ID2)
+        const staff = line.match(/(\d+)\s*ID|ID\s*(\d+)/i);
+        if (staff) flight.staff = parseInt(staff[1] || staff[2]);
+        
+        // Children (CHD)
+        const chd = line.match(/(\d+)\s*CHD|CHD\s*(\d+)/i);
+        if (chd) flight.children = parseInt(chd[1] || chd[2]);
     }
 
-    // Also check for standalone class counts in block
-    if (flight.paxBusiness === undefined) {
-        const businessAlt = block.match(/\bC(\d+)\b/);
-        if (businessAlt) flight.paxBusiness = parseInt(businessAlt[1]);
-    }
-
-    if (flight.paxEconomy === undefined) {
-        const economyAlt = block.match(/\bM(\d+)\b/);
-        if (economyAlt) flight.paxEconomy = parseInt(economyAlt[1]);
-    }
-
-    // Check for infants in block if not found yet: "+ 03 INF" or "03 INF"
-    if (flight.infants === undefined) {
-        const infBlockMatch = block.match(/\+\s*(\d+)\s*INF|\b(\d+)\s*INF\b/i);
-        if (infBlockMatch) {
-            flight.infants = parseInt(infBlockMatch[1] || infBlockMatch[2]);
-        }
-    }
-
-    // Children: CHD3, 2CHD
-    const childMatch = block.match(/(\d+)\s*CHD|CHD\s*(\d+)/i);
-    if (childMatch) flight.children = parseInt(childMatch[1] || childMatch[2]);
-
-    // Total: TTL=127, TTL: 139, TOTAL: 150
-    const ttlMatch = block.match(/(?:TTL|TOTAL)\s*[=:]\s*(\d+)/i);
+    // Total TTL=123
+    // EXCLUDE "TOTAL = 31 pcs" which is cargo
+    // Look for TTL or TOTAL followed by number, but NOT followed by pcs/kg
+    // Added \b after capture group to prevent partial match of "3" from "31"
+    const ttlMatch = block.match(/\b(?:TTL|TOTAL)\s*[=:]\s*(\d+)\b(?!\s*(?:pcs|pzs|kg|kilos|lbs))/i);
     if (ttlMatch) flight.total = parseInt(ttlMatch[1]);
 
-    // Calculate total if not provided
+    // Fallback total calculation
     if (!flight.total && (flight.paxBusiness || flight.paxEconomy)) {
         flight.total = (flight.paxBusiness || 0) + (flight.paxEconomy || 0) + (flight.infants || 0);
     }
@@ -509,12 +414,27 @@ function parsePassengers(block, flight) {
  */
 function parseWheelchairs(block, flight) {
     const wheelchairs = [];
+    const foundTypes = new Set();
 
-    // Match patterns like: 1WCHR, 2 WCHS, WCHC x 3, WCHC: 9R (type with seat)
-    const wchrPattern = /(\d+)\s*(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)|(?:(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)[:\s]*(\d+)?[A-Z]?)/gi;
+    // Format 1: Copa style - *WCHC*: 3R + 01C (R=Ramp, C=Cabin)
+    const copaWchMatch = block.match(/\*?WCHC\*?[:\s]*(\d+)R(?:\s*\+\s*(\d+)C)?/i);
+    if (copaWchMatch) {
+        const rampCount = parseInt(copaWchMatch[1]) || 0;
+        const cabinCount = parseInt(copaWchMatch[2]) || 0;
+        if (rampCount > 0) {
+            wheelchairs.push({ count: rampCount, type: 'WCHR', ...wheelchairTypes['WCHR'] });
+            foundTypes.add('WCHR');
+        }
+        if (cabinCount > 0) {
+            wheelchairs.push({ count: cabinCount, type: 'WCHC', ...wheelchairTypes['WCHC'] });
+            foundTypes.add('WCHC');
+        }
+    }
+
+    // Format 2: Standard - 1WCHR, 2 WCHS, WCHC x 3, Special: 1WCHC 1WCHR
+    const wchrPattern = /(\d+)\s*(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)|(?:(WCHR|WCHS|WCHC|WCHP|BLND|DEAF|DPNA|MAAS)[:\s]*(\d+)?)/gi;
 
     let match;
-    const foundTypes = new Set();
     while ((match = wchrPattern.exec(block)) !== null) {
         const type = (match[2] || match[3]).toUpperCase();
 
@@ -678,6 +598,114 @@ function renderFlights(flights) {
 }
 
 /**
+ * Consolidated Baggage and Cargo Parsing
+ */
+function parseBaggageAndCargo(block, flight) {
+    // Bags
+    const bagsMatch = block.match(/(?:Bags?|Baggage)[:\s]*(\d+)/i);
+    if (bagsMatch) flight.bags = parseInt(bagsMatch[1]);
+
+    // XQS (Copa bags)
+    const xqsMatch = block.match(/\*?XQS\*?[:\s]*(\d+)(?:\s+BIN\s*([^\n]+))?/i);
+    if (xqsMatch) {
+        if (!flight.bags) flight.bags = parseInt(xqsMatch[1]);
+        if (xqsMatch[2]) flight.bagsBin = xqsMatch[2].trim();
+    }
+
+    // Carousel
+    const carouselMatch = block.match(/\*?Carousel\*?[:\s]*(\d{1,2})\s*([a-z].*)?(?:\s*\*?OVZ\*?[:\s]*([A-Z]))?/i);
+    if (carouselMatch) {
+        flight.carousel = carouselMatch[1];
+        if (carouselMatch[2]) {
+            // If the note starts with *OVZ, it's not a note
+            if (!carouselMatch[2].includes('OVZ')) {
+                flight.carouselNote = carouselMatch[2].trim();
+            }
+        }
+        // Capture OVZ if it wasn't caught in group 3 (regex can be tricky)
+        const ovzMatch = block.match(/\*?OVZ\*?[:\s]*([A-Z])/i);
+        if (ovzMatch) flight.oversizeBelt = ovzMatch[1];
+    }
+
+    // === COMPLEX CARGO BLOCK PARSING ===
+    // Extract everything between *CARGO* and the next section (like STD, Pax, etc)
+    // This allows us to parse multi-line cargo details
+    const cargoBlockMatch = block.match(/\*?CARGO\*?\s*:([\s\S]*?)(?=(?:STD|Pax|Total|TTL|Special|IN\s*CARR|Counters|Lateral|$))/i);
+    
+    let specialItems = [];
+    
+    if (cargoBlockMatch) {
+        const cargoText = cargoBlockMatch[1];
+        
+        // 1. Try to find TOTAL count and weight explicitly in the block
+        // "TOTAL =31 pcs \n 592.0 kg"
+        const totalPcsMatch = cargoText.match(/TOTAL\s*[=:]\s*(\d+)\s*(?:pcs|pzs)/i);
+        if (totalPcsMatch) flight.cargoPieces = parseInt(totalPcsMatch[1]);
+        
+        // Find total weight - often on its own line or after total pieces
+        // Look for number + kg/kgs at start of line or after total
+        const totalKgMatch = cargoText.match(/(?:TOTAL[^\n]*\n|)\s*([0-9,.]+)\s*kg/i);
+        if (totalKgMatch) flight.cargo = parseFloat(totalKgMatch[1].replace(/,/g, ''));
+
+        // 2. Parse individual line items
+        // "30pcs LIVELOBSTERS" or "1pc CONSOLIDATION"
+        // We split by newline and look for patterns
+        const lines = cargoText.split('\n').map(l => l.trim()).filter(l => l);
+        
+        for (const line of lines) {
+            // Lobsters
+            const lobsters = line.match(/(\d+)\s*(?:pcs|pzs)?\s*(?:LIVE)?\s*LOBSTERS/i);
+            if (lobsters) specialItems.push(`🦞 ${lobsters[1]} Live Lobsters`);
+            
+            // Consolidation
+            const consol = line.match(/(\d+)\s*(?:pcs|pc|pzs)?\s*CONSOLIDATION/i);
+            if (consol) specialItems.push(`📦 ${consol[1]} Consolidation`);
+            
+            // Animals
+            const animals = line.match(/(\d+)\s*(?:pcs|pzs)?\s*(?:LIVE\s*ANIMALS|AVI)/i);
+            if (animals) specialItems.push(`🐾 ${animals[1]} Live Animals`);
+            
+            // Dangerous Goods
+            const dgr = line.match(/(\d+)\s*(?:pcs|pzs)?\s*(?:DGR|DANGEROUS\s*GOODS)/i);
+            if (dgr) specialItems.push(`⚠️ ${dgr[1]} Dangerous Goods`);
+        }
+    }
+
+    // === FALLBACK / SIMPLE PARSING ===
+    // If the complex block didn't yield results (or format is simple), try simple patterns
+    
+    if (!flight.cargo) {
+        // Pattern 1: Simple KGS "**2477 KGS **"
+        const simpleKg = block.match(/\*?Cargo\*?[:\s*]*\**([0-9,.]+)\s*KGS?/i);
+        if (simpleKg) flight.cargo = parseFloat(simpleKg[1].replace(/,/g, ''));
+        
+        // Pattern 2: Pcs/Kg combo "98 Pzs/ 2,062.00 Kgs"
+        const pcsKg = block.match(/(\d+)\s*(?:pcs|pzs|pc)\s*[\/\s]*\s*([0-9,.]+)\s*kgs?/i);
+        if (pcsKg) {
+            if (!flight.cargoPieces) flight.cargoPieces = parseInt(pcsKg[1]);
+            flight.cargo = parseFloat(pcsKg[2].replace(/,/g, ''));
+        }
+    }
+
+    // Add any special items found via simple regex if not already found
+    if (specialItems.length === 0) {
+        // 30pcs LIVELOBSTERS (global search)
+        const lobsters = block.match(/(\d+)\s*(?:pcs)?\s*LIVELOBSTERS|LIVE\s*LOBSTERS/i);
+        if (lobsters) specialItems.push(`🦞 ${lobsters[1]} Live Lobsters`);
+
+        // Consolidation
+        const consol = block.match(/(\d+)\s*(?:pcs|pc)\s*CONSOLIDATION/i);
+        if (consol) specialItems.push(`📦 ${consol[1]} Consolidation`);
+    }
+
+    if (specialItems.length > 0) flight.specialCargo = specialItems;
+
+    // NIL/TBD
+    if (/Cargo\*?[:\s]*NIL/i.test(block)) flight.cargoNil = true;
+    if (/Cargo\*?[:\s]*TBD/i.test(block)) flight.cargoTBD = true;
+}
+
+/**
  * Render a single flight to HTML
  * Focus: CLARITY - turning chaos into readable information
  */
@@ -687,10 +715,10 @@ function renderSingleFlight(flight) {
     const headerIcon = isArrival ? '🛬' : '🛫';
     const headerText = isArrival ? 'ARRIVING' : 'DEPARTING';
 
-    // Build origin/destination display
+    // Build origin/destination display - Dictionary now handles simplification
     let routeDisplay = '';
     if (flight.origin && flight.destination) {
-        routeDisplay = `${flight.origin} → ${flight.destination} (${flight.originName} → ${flight.destinationName})`;
+        routeDisplay = `${flight.originName} → ${flight.destinationName}`;
     } else if (flight.country && flight.flag) {
         routeDisplay = `from ${flight.country} ${flight.flag}`;
     } else if (flight.flag) {
@@ -701,39 +729,53 @@ function renderSingleFlight(flight) {
         <div class="section-header ${headerClass}">
             ${headerIcon} ${headerText}
         </div>
-        <div class="flight-title">
-            <div>
-                <div class="flight-number">✈️ ${flight.number || 'Unknown'}</div>
-                ${routeDisplay ? `<div class="flight-origin">${routeDisplay}</div>` : ''}
-            </div>
-            ${flight.date ? `<div class="flight-date">${flight.date}</div>` : ''}
+        <div class="flight-header">
+            <span class="flight-number">${flight.number || 'Unknown'}</span>
+            ${flight.date ? `<span class="flight-date">${flight.date}</span>` : ''}
         </div>
+        ${routeDisplay ? `<div class="flight-route">${routeDisplay}</div>` : ''}
     `;
 
-    // ===== FLIGHT INFO (Aircraft, Gate, Time) =====
+    // ===== FLIGHT INFO BOXES =====
     let infoBoxes = '';
 
     // Aircraft registration and type
     if (flight.registration) {
         infoBoxes += `
             <div class="info-box">
-                <div class="value">✈️ ${flight.registration}</div>
+                <div class="value">🛩️ ${flight.registration}</div>
                 <div class="label">${flight.aircraft || 'Aircraft'}</div>
             </div>
         `;
     }
 
-    // Gate (arrivals)
+    // Gate - keep full value like C39A/B39
     if (flight.gate) {
-        let gateLabel = 'Arrival Gate';
+        let gateLabel = isArrival ? 'Arrival Gate' : 'Departure Gate';
         if (flight.towGate) {
-            gateLabel += ` → Tow to ${flight.towGate}`;
-            if (flight.towTime) gateLabel += ` @ ${flight.towTime}`;
+            gateLabel += ` → Tow ${flight.towGate}`;
         }
         infoBoxes += `
             <div class="info-box">
                 <div class="value">🚪 ${flight.gate}</div>
                 <div class="label">${gateLabel}</div>
+            </div>
+        `;
+    }
+
+    // Time - in a card with full label
+    const time = flight.eta || flight.sta || flight.std || flight.etd;
+    let timeLabel = flight.eta ? 'Estimated Arrival' : flight.sta ? 'Scheduled Arrival' : flight.std ? 'Scheduled Departure' : flight.etd ? 'Estimated Departure' : '';
+    
+    // Add local time indicator if detected
+    const isLocal = flight.etaLocal || flight.staLocal || flight.stdLocal || flight.etdLocal;
+    if (isLocal) timeLabel += ' (Local)';
+
+    if (time) {
+        infoBoxes += `
+            <div class="info-box">
+                <div class="value">🕐 ${time}</div>
+                <div class="label">${timeLabel}</div>
             </div>
         `;
     }
@@ -753,31 +795,7 @@ function renderSingleFlight(flight) {
         infoBoxes += `
             <div class="info-box">
                 <div class="value">🎫 ${flight.counters}</div>
-                <div class="label">Check-in Counters</div>
-            </div>
-        `;
-    }
-
-    // Time (scheduled)
-    const time = flight.eta || flight.sta || flight.std || flight.etd;
-    const timeLabel = flight.eta ? 'Estimated Arrival' : flight.sta ? 'Scheduled Arrival' : flight.std ? 'Scheduled Departure' : flight.etd ? 'Estimated Departure' : '';
-    if (time) {
-        infoBoxes += `
-            <div class="info-box">
-                <div class="value">🕐 ${time}</div>
-                <div class="label">${timeLabel}</div>
-            </div>
-        `;
-    }
-
-    // Actual time
-    const actualTime = flight.ata || flight.atd;
-    const actualLabel = flight.ata ? 'Actual Arrival' : 'Actual Departure';
-    if (actualTime) {
-        infoBoxes += `
-            <div class="info-box">
-                <div class="value">✅ ${actualTime}</div>
-                <div class="label">${actualLabel}</div>
+                <div class="label">Check-In Counters</div>
             </div>
         `;
     }
@@ -799,7 +817,7 @@ function renderSingleFlight(flight) {
     // ===== PASSENGERS ON BOARD =====
     if (flight.paxBusiness !== undefined || flight.paxEconomy !== undefined ||
         flight.infants !== undefined || flight.children !== undefined ||
-        flight.total !== undefined || flight.staff !== undefined) {
+        flight.total !== undefined || flight.staff !== undefined || flight.paxMain !== undefined) {
 
         html += '<div class="pax-section"><div class="pax-section-label">👥 Passengers on Board</div><div class="pax-grid">';
 
@@ -808,6 +826,10 @@ function renderSingleFlight(flight) {
         }
         if (flight.paxEconomy !== undefined) {
             html += `<div class="pax-box"><div class="count">${flight.paxEconomy}</div><div class="type">Economy</div></div>`;
+        }
+        // Fallback for when we only have "Main" or generic Pax OB count
+        if (flight.paxMain !== undefined && flight.paxBusiness === undefined && flight.paxEconomy === undefined) {
+             html += `<div class="pax-box"><div class="count">${flight.paxMain}</div><div class="type">Adults/Seats</div></div>`;
         }
         if (flight.children !== undefined) {
             html += `<div class="pax-box"><div class="count">${flight.children}</div><div class="type">Children</div></div>`;
@@ -893,62 +915,68 @@ function renderSingleFlight(flight) {
     }
 
     // ===== BAGGAGE & CARGO =====
-    const hasBaggageCargo = flight.bags || flight.cargo || flight.cargoNil || flight.mail || flight.carousel;
+    const hasBaggageCargo = flight.bags || flight.cargo || flight.cargoNil || flight.cargoTBD || flight.mail || flight.carousel;
 
     if (hasBaggageCargo) {
         html += '<div class="info-grid">';
 
         if (flight.bags) {
-            let bagsDisplay = `${flight.bags}`;
-            if (flight.bagsBin) bagsDisplay += ` (Bins ${flight.bagsBin})`;
-            let bagsLabel = 'Checked Bags';
-            if (flight.priorityBags) bagsLabel += ` • Priority: ${flight.priorityBags}`;
             html += `
                 <div class="info-box">
-                    <div class="value">🧳 ${bagsDisplay}</div>
-                    <div class="label">${bagsLabel}</div>
+                    <div class="value">🧳 ${flight.bags}</div>
+                    <div class="label">Checked Bags</div>
                 </div>
             `;
         }
 
         if (flight.carousel) {
-            let carouselDisplay = `${flight.carousel}`;
-            if (flight.oversizeBelt) carouselDisplay += ` (Oversize Area ${flight.oversizeBelt})`;
+            let carouselValue = flight.carousel;
+            if (flight.carouselNote) carouselValue += ` (${flight.carouselNote})`;
             let carouselLabel = 'Baggage Carousel';
-            if (flight.carouselNote) carouselLabel += ` (${flight.carouselNote})`;
+            if (flight.oversizeBelt) carouselLabel += ` · Oversize: ${flight.oversizeBelt}`;
             html += `
                 <div class="info-box">
-                    <div class="value">🔄 ${carouselDisplay}</div>
+                    <div class="value">🔄 ${carouselValue}</div>
                     <div class="label">${carouselLabel}</div>
                 </div>
             `;
         }
 
         if (flight.cargo) {
-            let cargoLabel = 'Cargo Weight';
-            if (flight.cargoPieces) cargoLabel += ` (${flight.cargoPieces} pcs)`;
+            // We split parsing, now display nicely
+            // If we have pieces AND weight, show both
+            // If only weight, show weight
+            
+            // Box 1: Weight
             html += `
                 <div class="info-box">
                     <div class="value">📦 ${flight.cargo.toLocaleString()} kg</div>
-                    <div class="label">${cargoLabel}</div>
+                    <div class="label">Cargo Weight</div>
                 </div>
             `;
-        }
-
-        if (flight.cargoNil) {
+            
+            // Box 2: Pieces (if available)
+            if (flight.cargoPieces) {
+                html += `
+                    <div class="info-box">
+                        <div class="value">🧩 ${flight.cargoPieces}</div>
+                        <div class="label">Cargo Pieces</div>
+                    </div>
+                `;
+            }
+            
+        } else if (flight.cargoNil) {
             html += `
                 <div class="info-box nil">
-                    <div class="value">📦 None</div>
-                    <div class="label">No Cargo</div>
+                    <div class="value">📦 NIL</div>
+                    <div class="label">Cargo</div>
                 </div>
             `;
-        }
-
-        if (flight.specialCargo && flight.specialCargo.length > 0) {
+        } else if (flight.cargoTBD) {
             html += `
-                <div class="info-box special-cargo">
-                    <div class="value">${flight.specialCargo.join(', ')}</div>
-                    <div class="label">Special Cargo</div>
+                <div class="info-box">
+                    <div class="value">📦 TBD</div>
+                    <div class="label">Cargo</div>
                 </div>
             `;
         }
@@ -963,6 +991,26 @@ function renderSingleFlight(flight) {
         }
 
         html += '</div>';
+    }
+
+    // Special cargo (lobsters, live animals, etc.)
+    if (flight.specialCargo && flight.specialCargo.length > 0) {
+        html += `
+            <div class="special-box cargo-section">
+                <div class="header">⚠️ Special Cargo</div>
+                <div class="details">${flight.specialCargo.join('<br>')}</div>
+            </div>
+        `;
+    }
+    
+    // ===== PRIORITY BAGS (New) =====
+    if (flight.priorityBags) {
+        html += `
+            <div class="special-box">
+                <div class="header">🏷️ Priority Bags</div>
+                <div class="details">${flight.priorityBags}</div>
+            </div>
+        `;
     }
 
     // ===== REMARKS =====
@@ -1021,21 +1069,29 @@ function generateTextSummary(flights) {
 
         // Time
         const time = flight.eta || flight.sta || flight.std || flight.etd;
-        const timeLabel = flight.eta ? 'ETA' : flight.sta ? 'STA' : flight.std ? 'STD' : 'ETD';
+        let timeLabel = flight.eta ? 'ETA' : flight.sta ? 'STA' : flight.std ? 'STD' : 'ETD';
+        // Add local time indicator
+        if (flight.etaLocal || flight.staLocal || flight.stdLocal || flight.etdLocal) {
+            timeLabel += ' (lt)';
+        }
         if (time) text += `${timeLabel}: ${time}\n`;
 
         // Location
         if (flight.gate) text += `Gate: ${flight.gate}\n`;
+        if (flight.towGate) text += `Tow Gate: ${flight.towGate} @ ${flight.towTime || 'TBA'}\n`;
+        if (flight.stand) text += `Stand: ${flight.stand}\n`;
         if (flight.counters) text += `Counters: ${flight.counters}\n`;
         if (flight.lateral) text += `Lateral: Belt ${flight.lateral}\n`;
 
         // Passengers
-        if (flight.total || flight.paxBusiness || flight.paxEconomy) {
+        if (flight.total || flight.paxBusiness || flight.paxEconomy || flight.paxMain) {
             text += '\nPassengers:\n';
             if (flight.paxBusiness !== undefined) text += `  Business: ${flight.paxBusiness}\n`;
             if (flight.paxEconomy !== undefined) text += `  Economy: ${flight.paxEconomy}\n`;
+            if (flight.paxMain !== undefined) text += `  Main/Seats: ${flight.paxMain}\n`;
             if (flight.children !== undefined) text += `  Children: ${flight.children}\n`;
             if (flight.infants !== undefined) text += `  Infants: ${flight.infants}\n`;
+            if (flight.staff !== undefined) text += `  Staff: ${flight.staff}\n`;
             if (flight.total !== undefined) text += `  Total: ${flight.total}\n`;
         }
 
@@ -1056,9 +1112,17 @@ function generateTextSummary(flights) {
 
         // Connections
         if (flight.connecting) {
-            text += `\nConnecting: ${flight.connecting.count} pax → ${flight.connecting.flight}`;
-            text += ` @ ${flight.connecting.time}`;
-            if (flight.connecting.destinationName) text += ` to ${flight.connecting.destinationName}`;
+            let connText = `\nConnecting: ${flight.connecting.count}`;
+            if (flight.connecting.breakdown) {
+                const breakdownStr = flight.connecting.breakdown.map(b => `${b.count} ${b.airlineName}`).join(', ');
+                connText += ` (${breakdownStr})`;
+            }
+            text += connText;
+            
+            if (flight.connecting.flight) {
+                text += ` → ${flight.connecting.flight} @ ${flight.connecting.time}`;
+                if (flight.connecting.destinationName) text += ` to ${flight.connecting.destinationName}`;
+            }
             text += '\n';
         }
 
@@ -1073,11 +1137,27 @@ function generateTextSummary(flights) {
             if (flight.carousel) text += ` (Carousel ${flight.carousel})`;
             text += '\n';
         }
+        
+        if (flight.priorityBags) {
+            text += `Priority Bags: ${flight.priorityBags}\n`;
+        }
 
         if (flight.cargo) {
-            text += `Cargo: ${flight.cargo.toLocaleString()} kg\n`;
+            text += `Cargo: ${flight.cargo.toLocaleString()} kg`;
+            if (flight.cargoPieces) text += ` (${flight.cargoPieces} pcs)`;
+            text += '\n';
         } else if (flight.cargoNil) {
             text += `Cargo: NIL\n`;
+        } else if (flight.cargoTBD) {
+            text += `Cargo: TBD\n`;
+        }
+        
+        if (flight.specialCargo && flight.specialCargo.length > 0) {
+            text += `Special Cargo: ${flight.specialCargo.join(', ')}\n`;
+        }
+
+        if (flight.mail) {
+            text += `Mail: ${flight.mail.toLocaleString()} kg\n`;
         }
 
         // Remarks
@@ -1125,29 +1205,27 @@ async function saveAsPNG() {
         label.textContent = 'Saving...';
         saveBtn.disabled = true;
 
-        // Clone the card for rendering
         const cardClone = outputCard.cloneNode(true);
+        // Removed fixed width of 420px to allow natural expansion
+        // REMOVED padding and background to match display exactly
         cardClone.style.cssText = `
             position: absolute;
             left: -9999px;
             top: 0;
-            animation: none;
+            width: 500px; 
         `;
         document.body.appendChild(cardClone);
 
-        // Wait a frame for styles to apply
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Increased timeout for robustness
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Render to canvas - just the card, no wrapper
         const canvas = await html2canvas(cardClone, {
-            backgroundColor: null,
+            backgroundColor: null, // Transparent background to respect card border radius
             scale: 2,
             logging: false,
-            useCORS: true,
-            allowTaint: true
+            useCORS: true
         });
 
-        // Clean up
         document.body.removeChild(cardClone);
 
         // Generate filename: squawk-[FLIGHT(S)]-[DATE].png
@@ -1162,16 +1240,19 @@ async function saveAsPNG() {
             if (flightNumbers.length === 1) {
                 filename += `-${flightNumbers[0]}`;
             } else if (flightNumbers.length > 1) {
-                // Turn: combine as [FI603-FI602]
+                // Turn: combine flight numbers (FI603-FI602)
                 filename += `-${flightNumbers.join('-')}`;
             }
 
             // Add date from first flight that has one
             const flightWithDate = lastParsedFlights.find(f => f.date);
             if (flightWithDate && flightWithDate.date) {
-                // Clean date: "Jan 29" -> "29Jan" or keep as-is
-                const cleanDate = flightWithDate.date.replace(/\s+/g, '');
-                filename += `-${cleanDate}`;
+                // Clean date: "Jan 26, 2026" -> "26Jan2026"
+                const dateMatch = flightWithDate.date.match(/(\w+)\s+(\d+),?\s*(\d{4})?/);
+                if (dateMatch) {
+                    const cleanDate = `${dateMatch[2]}${dateMatch[1]}${dateMatch[3] || ''}`;
+                    filename += `-${cleanDate}`;
+                }
             }
         }
 
@@ -1212,29 +1293,26 @@ async function copyImageToClipboard() {
         label.textContent = 'Copying...';
         copyImageBtn.disabled = true;
 
-        // Clone the card for rendering
+        // Clone the card for rendering at mobile-friendly width
         const cardClone = outputCard.cloneNode(true);
         cardClone.style.cssText = `
             position: absolute;
             left: -9999px;
             top: 0;
-            animation: none;
+            width: 500px;
         `;
         document.body.appendChild(cardClone);
 
         // Wait a frame for styles to apply
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Render to canvas - just the card, no wrapper
         const canvas = await html2canvas(cardClone, {
             backgroundColor: null,
             scale: 2,
             logging: false,
-            useCORS: true,
-            allowTaint: true
+            useCORS: true
         });
 
-        // Clean up
         document.body.removeChild(cardClone);
 
         // Copy to clipboard
