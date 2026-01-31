@@ -230,10 +230,17 @@ function parseIncomingTransfers(block, flight) {
  * Parse baggage and cargo
  */
 function parseBaggageAndCargo(block, flight) {
-    const bagsMatch = block.match(/(?:Bags?|Baggage)[:\s]*(\d+)/i);
-    if (bagsMatch) flight.bags = parseInt(bagsMatch[1]);
+    // XQS format first (more specific): "XQS: 148 BIN 1,2 & 3"
     const xqsMatch = block.match(/XQS[:\s]*(\d+)(?:\s+BIN\s*([^\n]+))?/i);
-    if (xqsMatch) { if (!flight.bags) flight.bags = parseInt(xqsMatch[1]); if (xqsMatch[2]) flight.bagsBin = xqsMatch[2].trim(); }
+    if (xqsMatch) {
+        flight.bags = parseInt(xqsMatch[1]);
+        if (xqsMatch[2]) flight.bagsBin = xqsMatch[2].trim();
+    }
+    // General bags format: "Bags: 107" (require colon, avoid "Priority Bags")
+    if (!flight.bags) {
+        const bagsMatch = block.match(/(?<!Priority\s)Bags?[:\s]*(\d+)/i);
+        if (bagsMatch) flight.bags = parseInt(bagsMatch[1]);
+    }
     // Carousel - handle "Carousel: 9might change" or "Carousel: 9 might change"
     const carouselMatch = block.match(/Carousel[:\s]*(\d{1,2})\s*([a-z].*)?/i);
     if (carouselMatch) {
