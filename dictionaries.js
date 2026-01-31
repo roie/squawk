@@ -719,6 +719,34 @@ const flagToCountry = {
     '🇮🇱': 'Israel',
 };
 
+// Header labels for fuzzy matching (handles typos like "Cagro" -> "Cargo")
+const opsLabels = [
+    { key: 'flight', matches: ['Flight', 'FLT', 'Flight Number'] },
+    { key: 'registration', matches: ['Registration', 'REG', 'AC REG', 'A/C REG'] },
+    { key: 'date', matches: ['Date', 'Flight Date'] },
+    { key: 'eta', matches: ['Estimated Arrival', 'ETA', 'Arr Time'] },
+    { key: 'sta', matches: ['Scheduled Arrival', 'STA'] },
+    { key: 'std', matches: ['Scheduled Departure', 'STD', 'Dep Time'] },
+    { key: 'etd', matches: ['Estimated Departure', 'ETD'] },
+    { key: 'gate', matches: ['Arrival Gate', 'Gate', 'Arr Gate', 'Departure Gate'] },
+    { key: 'tow_gate', matches: ['Tow Gate', 'Tow IFC Gate', 'Towing'] },
+    { key: 'pax_ob', matches: ['Pax OB', 'Passengers On Board', 'Pax On Board'] },
+    { key: 'pax_count', matches: ['Pax count', 'Pax', 'Passengers'] },
+    { key: 'ttl', matches: ['Total Pax', 'TTL', 'Total Passengers'] },
+    { key: 'cargo', matches: ['Cargo Weight', 'Cargo', 'Cagro'] },
+    { key: 'bags', matches: ['Checked Bags', 'Bags', 'Baggage'] },
+    { key: 'priority_bags', matches: ['Priority Bags', 'Priority'] },
+    { key: 'carousel', matches: ['Baggage Carousel', 'Carousel', 'Belt'] },
+    { key: 'special', matches: ['Special Assistance', 'Special', 'WCHR', 'WCHC'] },
+    { key: 'remarks', matches: ['Remarks', 'Notes', 'Delay Reason'] },
+    { key: 'counters', matches: ['Check-In Counters', 'Counters', 'Checkin'] },
+    { key: 'lateral', matches: ['Baggage Belt', 'Lateral', 'Belt'] },
+    { key: 'conx', matches: ['Connecting Pax', 'Conx Pax', 'CNX', 'Connections'] },
+    { key: 'transfers', matches: ['Incoming Transfers', 'IN CARR PAX', 'Transfers'] },
+    { key: 'xqs', matches: ['Checked Bags', 'XQS', 'Copa Bags'] },
+    { key: 'mail', matches: ['Mail'] }
+];
+
 // Cargo type keywords for parsing special cargo
 const cargoKeywords = {
     'LIVE': 'Live Animals',

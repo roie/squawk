@@ -300,6 +300,14 @@ header h1 {
     color: var(--text-muted);
 }
 
+/* Subtle note styling for things like "might change" */
+.info-box .value .note {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
 /* ============================================================================
    PASSENGER TABLE
    ============================================================================ */
