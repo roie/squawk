@@ -98,7 +98,7 @@ function parsePassengers(block, flight) {
     }
 
     // STRICT: Exclude cargo totals (pcs/kg) from passenger counts
-    const ttlMatch = block.match(/\b(?:TTL|TOTAL)\s*[=:]\s*(\d+)\b(?!\s*(?:pcs|pzs|kg|kilos|lbs))/i);
+    const ttlMatch = block.match(/\b(?:TTL|TOTAL)\s*[=:]\s*(\d+)\b(?!\s*(?:pcs|pzs|pieces?|kg|kgs|kilos|lbs))/i);
     if (ttlMatch) flight.total = parseInt(ttlMatch[1]);
 
     if (!flight.total && (flight.paxBusiness || flight.paxEconomy)) {
@@ -258,10 +258,10 @@ function parseBaggageAndCargo(block, flight) {
     if (cargoBlockMatch) {
         const cargoText = cargoBlockMatch[1];
         // Parse TOTAL pieces - must be followed by pcs/pzs (not pax)
-        const totalPcsMatch = cargoText.match(/TOTAL\s*[=:]\s*(\d+)\s*(?:pcs|pzs)/i);
+        const totalPcsMatch = cargoText.match(/TOTAL\s*[=:]\s*(\d+)\s*(?:pcs|pzs|pieces?)/i);
         if (totalPcsMatch) flight.cargoPieces = parseInt(totalPcsMatch[1]);
-        // Parse total kg - look for standalone kg value or after TOTAL line
-        const totalKgMatch = cargoText.match(/(\d+(?:\.\d+)?)\s*kg\b/i);
+        // Parse total kg - look for standalone kg value (handles both kg and kgs)
+        const totalKgMatch = cargoText.match(/(\d+(?:[.,]\d+)?)\s*kgs?/i);
         if (totalKgMatch) flight.cargo = parseFloat(totalKgMatch[1].replace(/,/g, ''));
         const lines = cargoText.split('\n').map(l => l.trim()).filter(l => l);
         for (const line of lines) {
@@ -276,11 +276,16 @@ function parseBaggageAndCargo(block, flight) {
             if (dgr) specialItems.push(`⚠️ ${dgr[1]} Dangerous Goods`);
         }
     }
+    // Combined pcs/kg format: "30pcs/563kg", "30 pcs / 563 kgs", "30 pieces/563 kg"
+    const pcsKg = block.match(/(\d+)\s*(?:pcs|pzs|pc|pieces?)\s*[\/\s]+\s*([0-9,.]+)\s*kgs?/i);
+    if (pcsKg) {
+        if (!flight.cargoPieces) flight.cargoPieces = parseInt(pcsKg[1]);
+        if (!flight.cargo) flight.cargo = parseFloat(pcsKg[2].replace(/,/g, ''));
+    }
+    // Simple kg format: "Cargo: 563kg"
     if (!flight.cargo) {
-        const simpleKg = block.match(/Cargo[:\s]*([0-9,.]+)\s*KGS?/i);
+        const simpleKg = block.match(/Cargo[:\s]*([0-9,.]+)\s*kgs?/i);
         if (simpleKg) flight.cargo = parseFloat(simpleKg[1].replace(/,/g, ''));
-        const pcsKg = block.match(/(\d+)\s*(?:pcs|pzs|pc)\s*[\/\s]*\s*([0-9,.]+)\s*kgs?/i);
-        if (pcsKg) { if (!flight.cargoPieces) flight.cargoPieces = parseInt(pcsKg[1]); flight.cargo = parseFloat(pcsKg[2].replace(/,/g, '')); }
     }
     if (specialItems.length === 0) {
         // Fallback for LIVELOBSTERS or LIVE LOBSTERS
