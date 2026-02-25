@@ -245,20 +245,24 @@ export function parseSingleFlight(block) {
     };
 
     const flightNumPatterns = [
-        /🛫\s*([A-Z]{2}\d{1,4})/,
-        /🛬\s*([A-Z]{2}\d{1,4})/,
-        /(?:Flight|FLT)[:\s]*([A-Z]{2}\d{1,4})/i,
-        /^([A-Z]{2}\d{1,4})\s+[\u{1F1E6}-\u{1F1FF}]/mu,
-        /(?:^|\n)\s*([A-Z]{2}\d{1,4})\s+[A-Z]{3}-[A-Z]{3}/m,
-        /(?:^|\n)\s*([A-Z]{2}\d{1,4})\b/
+        /🛫\s*([A-Z]{2,3}\d{1,4})/,
+        /🛬\s*([A-Z]{2,3}\d{1,4})/,
+        /(?:Flight|FLT)[:\s]*([A-Z]{2,3}\d{1,4})/i,
+        /^([A-Z]{2,3}\d{1,4})\s+[\u{1F1E6}-\u{1F1FF}]/mu,
+        /(?:^|\n)\s*([A-Z]{2,3}\d{1,4})\s+[A-Z]{3,4}-[A-Z]{3,4}/m,
+        /(?:^|\n)\s*([A-Z]{2,3}\d{1,4})\b/
     ];
     for (const pattern of flightNumPatterns) {
         const match = corrected.match(pattern);
         if (match) {
             flight.number = match[1].toUpperCase();
-            const code = flight.number.substring(0, 2);
-            flight.airlineCode = code;
-            flight.airlineName = airlines[code] || null;
+            // Handle both 2-letter (IATA) and 3-letter (ICAO) prefixes
+            const prefixMatch = flight.number.match(/^([A-Z]{2,3})/);
+            if (prefixMatch) {
+                const code = prefixMatch[1];
+                flight.airlineCode = code;
+                flight.airlineName = airlines[code] || null;
+            }
             break;
         }
     }
@@ -324,7 +328,7 @@ export function parseSingleFlight(block) {
     if (towMatch) { flight.towGate = towMatch[1]; flight.towTime = towMatch[2]; }
 
     const standMatch = corrected.match(/(?:Stand|Bay)[:\s]*(\d{1,3}[A-Z]?)/i); if (standMatch) flight.stand = standMatch[1];
-    const routeMatch = corrected.match(/([A-Z]{3})\s*[-–—→]\s*([A-Z]{3})/);
+    const routeMatch = corrected.match(/([A-Z]{3,4})\s*[-–—→]\s*([A-Z]{3,4})/);
     if (routeMatch) {
         flight.origin = routeMatch[1]; flight.destination = routeMatch[2];
         flight.originName = airports[routeMatch[1]] || routeMatch[1];
