@@ -89,12 +89,19 @@ function parsePassengers(block, flight) {
 
     const paxLineMatch = block.match(/Pax(?:\s+count)?[ :\s]*([^\n]+)/i);
     if (paxLineMatch) {
-        const line = paxLineMatch[1];
+        const line = paxLineMatch[1].trim();
         const biz = line.match(/\b[CJF](\d+)\b/); if (biz) flight.paxBusiness = parseInt(biz[1]);
         const eco = line.match(/\b[MY](\d+)\b/); if (eco) flight.paxEconomy = parseInt(eco[1]);
         const inf = line.match(/(?:INF|INFT)\s*(\d+)|\b(\d+)\s*(?:INF|INFT)/i); if (inf) flight.infants = parseInt(inf[1] || inf[2]);
         const staff = line.match(/(\d+)\s*ID|ID\s*(\d+)/i); if (staff) flight.staff = parseInt(staff[1] || staff[2]);
         const chd = line.match(/(\d+)\s*CHD|CHD\s*(\d+)/i); if (chd) flight.children = parseInt(chd[1] || chd[2]);
+
+        // If it's a plain number like "Pax: 150"
+        const simpleCount = line.match(/^\s*(\d+)\s*$/);
+        if (simpleCount && !flight.paxBusiness && !flight.paxEconomy && !flight.paxMain) {
+            flight.paxMain = parseInt(simpleCount[1]);
+            flight.total = flight.paxMain + (flight.infants || 0);
+        }
     }
 
     // STRICT: Exclude cargo totals (pcs/kg) from passenger counts
@@ -498,12 +505,48 @@ function parseInputToBlocks(input) {
         .replace(/\*\*([^*]+)\*\*/g, '$1')
         .replace(/\*([^*\n]+)\*/g, '$1');
 
-    if (normalized.includes('----------')) return normalized.split(/----------+/).filter(b => b.trim());
+    // 1. If explicit separators exist, use them as primary split
+    if (normalized.includes('----------')) {
+        return normalized.split(/----------+/).filter(b => b.trim());
+    }
 
-    // Split on flight patterns: FI603, 🛫FI602, 🛬FI602, or "Flight: XX123"
-    // After markdown removal, flight numbers appear as plain text
-    const flightPattern = /(?=(?:^|\n)\s*[A-Z]{2}\d{1,4}\s+[\u{1F1E6}-\u{1F1FF}])|(?=🛫\s*[A-Z]{2}\d{1,4})|(?=🛬\s*[A-Z]{2}\d{1,4})|(?=(?:^|\n)Flight[:\s]+[A-Z]{2}\d{1,4})/mu;
-    const blocks = normalized.split(flightPattern).filter(b => b.trim());
+    // 2. Stateful line-by-line scanner
+    const lines = normalized.split('\n');
+    const blocks = [];
+    let currentBlock = [];
+
+    // Patterns that indicate a NEW flight starts on this line
+    // MUST be at the start of the trimmed line to avoid splitting on remarks
+    const headerPatterns = [
+        /^🛫\s*[A-Z]{2}\d{1,4}/,                            // 🛫 FI602
+        /^🛬\s*[A-Z]{2}\d{1,4}/,                            // 🛬 FI602
+        /^Flight[:\s]+[A-Z]{2}\d{1,4}/i,                    // Flight: FI602
+        /^[A-Z]{2}\d{1,4}\s+[\u{1F1E6}-\u{1F1FF}]/u         // FI603 🇮🇸
+    ];
+
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+        
+        // Skip purely empty lines at the very beginning of a block
+        if (!trimmedLine && currentBlock.length === 0) continue;
+
+        // Check if this line is a header
+        const isHeader = headerPatterns.some(pattern => pattern.test(trimmedLine));
+
+        if (isHeader && currentBlock.length > 0) {
+            // We found a new header, push the previous block and start a new one
+            blocks.push(currentBlock.join('\n').trim());
+            currentBlock = [line];
+        } else {
+            currentBlock.push(line);
+        }
+    }
+
+    // Push the final block
+    if (currentBlock.length > 0) {
+        blocks.push(currentBlock.join('\n').trim());
+    }
+
     return blocks.length > 0 ? blocks : [normalized];
 }
 
@@ -633,10 +676,51 @@ function generateTextSummary(flights) {
         if (f.date) text += `Date: ${f.date}\n`;
         if (f.registration) text += `Aircraft: ${f.registration} (${f.aircraft || ''})\n`;
         const time = f.eta || f.sta || f.std || f.etd;
-        if (time) text += `Time: ${time}\n`;
-        if (f.gate) text += `Gate: ${f.gate}\n`;
-        if (f.total) text += `Total Pax: ${f.total}\n`;
-        if (f.cargo) text += `Cargo: ${f.cargo.toLocaleString()} kg\n`;
+        if (time) {
+            let label = f.eta ? 'ETA' : f.sta ? 'STA' : f.std ? 'STD' : 'ETD';
+            text += `${label}: ${time}\n`;
+        }
+        if (f.gate) text += `Gate: ${f.gate}${f.towGate ? ` (Tow to ${f.towGate})` : ''}\n`;
+        if (f.stand) text += `Stand: ${f.stand}\n`;
+        if (f.counters) text += `Counters: ${f.counters}\n`;
+        if (f.lateral) text += `Baggage Belt: ${f.lateral}\n`;
+
+        // Passenger breakdown
+        if (f.total) {
+            let paxStr = `Pax: ${f.total}`;
+            let details = [];
+            if (f.paxBusiness) details.push(`${f.paxBusiness}C`);
+            if (f.paxEconomy) details.push(`${f.paxEconomy}Y`);
+            if (f.infants) details.push(`${f.infants}INF`);
+            if (details.length > 0) paxStr += ` (${details.join('/')})`;
+            text += paxStr + '\n';
+        }
+
+        // Special Assistance
+        if (f.wheelchairs || f.specialServices) {
+            let lines = [];
+            if (f.wheelchairs) for (const wc of f.wheelchairs) lines.push(`${wc.count}x ${wc.type}`);
+            if (f.specialServices) for (const svc of f.specialServices) lines.push(`${svc.count}x ${svc.code}`);
+            text += `Special: ${lines.join(', ')}\n`;
+        }
+
+        // Connections
+        if (f.connecting) {
+            let conx = `Connections: ${f.connecting.count} pax`;
+            if (f.connecting.flight) conx += ` to ${f.connecting.flight} @ ${f.connecting.time}`;
+            text += conx + '\n';
+        }
+
+        // Cargo & Bags
+        if (f.bags) text += `Bags: ${f.bags}\n`;
+        if (f.carousel) text += `Carousel: ${f.carousel}${f.carouselNote ? ` (${f.carouselNote})` : ''}\n`;
+        if (f.cargo) text += `Cargo: ${f.cargo.toLocaleString()} kg${f.cargoPieces ? ` (${f.cargoPieces} pcs)` : ''}\n`;
+        else if (f.cargoNil) text += `Cargo: NIL\n`;
+
+        if (f.specialCargo && f.specialCargo.length > 0) {
+            text += `Special Cargo:\n - ${f.specialCargo.map(c => c.replace(/^[^\s]+\s*/, '')).join('\n - ')}\n`;
+        }
+
         if (f.remarks) text += `Remarks: ${f.remarks}\n`;
     });
     return text.trim();
