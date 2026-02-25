@@ -4,7 +4,7 @@
 // ============================================================================ 
 
 // Aircraft type codes (IATA/ICAO) to full names
-const aircraftTypes = {
+export const aircraftTypes = {
     // Boeing 737 family
     '7M7': 'Boeing 737 MAX 7',
     '7M8': 'Boeing 737 MAX 8',
@@ -103,7 +103,7 @@ const aircraftTypes = {
 };
 
 // Airline codes (IATA 2-letter)
-const airlines = {
+export const airlines = {
     // Cargo & Logistics
     'FX': 'FedEx Express',
     '5X': 'UPS Airlines',
@@ -288,7 +288,7 @@ const airlines = {
 };
 
 // Airport codes (IATA 3-letter)
-const airports = {
+export const airports = {
     // Canada - Major
     'YYZ': 'Toronto',
     'YVR': 'Vancouver',
@@ -603,7 +603,7 @@ const airports = {
 };
 
 // Wheelchair/mobility assistance codes
-const wheelchairTypes = {
+export const wheelchairTypes = {
     'WCHR': { name: 'Wheelchair (Ramp)', detail: 'Can walk short distances, needs ramp assistance' },
     'WCHS': { name: 'Wheelchair (Steps)', detail: 'Cannot climb stairs, can walk to seat' },
     'WCHC': { name: 'Wheelchair (Cabin)', detail: 'Fully immobile, needs aisle chair to seat' },
@@ -617,7 +617,7 @@ const wheelchairTypes = {
 };
 
 // Special service codes
-const specialServices = {
+export const specialServices = {
     'UMNR': { name: 'Unaccompanied Minor', icon: '👶' },
     'CHD': { name: 'Child', icon: '🧒' },
     'INF': { name: 'Infant', icon: '👶' },
@@ -639,7 +639,7 @@ const specialServices = {
 };
 
 // Country flag emoji to country name mapping
-const flagToCountry = {
+export const flagToCountry = {
     '🇮🇸': 'Iceland',
     '🇨🇦': 'Canada',
     '🇺🇸': 'United States',
@@ -720,7 +720,7 @@ const flagToCountry = {
 };
 
 // Header labels for fuzzy matching (handles typos like "Cagro" -> "Cargo")
-const opsLabels = [
+export const opsLabels = [
     { key: 'flight', matches: ['Flight', 'FLT', 'Flight Number'] },
     { key: 'registration', matches: ['Registration', 'REG', 'AC REG', 'A/C REG'] },
     { key: 'date', matches: ['Date', 'Flight Date'] },
@@ -748,7 +748,7 @@ const opsLabels = [
 ];
 
 // Cargo type keywords for parsing special cargo
-const cargoKeywords = {
+export const cargoKeywords = {
     'LIVE': 'Live Animals',
     'LOBSTER': 'Live Lobsters',
     'LOBSTERS': 'Live Lobsters',
