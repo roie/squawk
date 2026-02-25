@@ -286,14 +286,36 @@ export function parseSingleFlight(block) {
     const acMatch = corrected.match(/\((\d{2,3}[A-Z]?|[A-Z]\d{2}|7M[89]|E\d{2}|CR[9J]|DH4|AT7)\)/i) || corrected.match(/(?:A\/C|Aircraft|Type)[:\s]*(\d{2,3}[A-Z]?|[A-Z]\d{2}|7M[89])/i);
     if (acMatch) { flight.aircraftCode = acMatch[1].toUpperCase(); flight.aircraft = aircraftTypes[flight.aircraftCode] || flight.aircraftCode; }
 
-    const extractTime = (regex) => {
-        const m = corrected.match(regex);
-        return m ? { time: m[1], local: m[0].toLowerCase().includes('lt') } : null;
+    const normalizeTime = (timeStr) => {
+        if (!timeStr) return null;
+        let clean = timeStr.replace(/[^\d]/g, '');
+        if (clean.length === 3) clean = '0' + clean;
+        if (clean.length === 4) {
+            const hh = clean.substring(0, 2);
+            const mm = clean.substring(2, 4);
+            if (parseInt(hh) < 24 && parseInt(mm) < 60) return `${hh}:${mm}`;
+        }
+        return timeStr.includes(':') ? timeStr : null;
     };
-    const eta = extractTime(/ETA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i); if (eta) { flight.eta = eta.time; flight.etaLocal = eta.local; }
-    const sta = extractTime(/STA[:\s]*(\d{1,2}:\d{2})(?:lt)?/i); if (sta) { flight.sta = sta.time; flight.staLocal = sta.local; }
-    const std = extractTime(/STD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i); if (std) { flight.std = std.time; flight.stdLocal = std.local; }
-    const etd = extractTime(/ETD[:\s]*(\d{1,2}:\d{2})(?:lt)?/i); if (etd) { flight.etd = etd.time; flight.etdLocal = etd.local; }
+
+    const extractTime = (label) => {
+        const pattern = new RegExp(`${label}[:\\s]*(\\d{1,2}:?\\d{2})\\s*(LT|Z)?`, 'i');
+        const m = corrected.match(pattern);
+        if (!m) return null;
+        
+        const timeValue = normalizeTime(m[1]);
+        if (!timeValue) return null;
+
+        return { 
+            time: timeValue, 
+            local: (m[2] && m[2].toUpperCase() === 'LT') || corrected.toLowerCase().includes(label.toLowerCase() + ' lt') 
+        };
+    };
+
+    const eta = extractTime('ETA'); if (eta) { flight.eta = eta.time; flight.etaLocal = eta.local; }
+    const sta = extractTime('STA'); if (sta) { flight.sta = sta.time; flight.staLocal = sta.local; }
+    const std = extractTime('STD'); if (std) { flight.std = std.time; flight.stdLocal = std.local; }
+    const etd = extractTime('ETD'); if (etd) { flight.etd = etd.time; flight.etdLocal = etd.local; }
 
     const gateMatch = corrected.match(/Arr\s*Gate[:\s]*([A-Z0-9]+(?:\s*\/\s*[A-Z0-9]+)?)/i) ||
                       corrected.match(/Gate[:\s]*([A-Z0-9]+(?:\/[A-Z0-9]+)?)/i);
