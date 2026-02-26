@@ -28,6 +28,15 @@ let lastParsedFlights = [];
 // ============================================================================ 
 
 translateBtn.addEventListener('click', translate);
+
+// Keyboard Shortcut: Ctrl+Enter or Cmd+Enter to translate
+inputText.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        translate();
+    }
+});
+
 tryExampleLink.addEventListener('click', (e) => {
     e.preventDefault();
     inputText.value = `🛫 ICE602 🇮🇸
