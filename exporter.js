@@ -128,11 +128,17 @@ async function generateCanvas(element) {
 function showSuccess(btn, successText = 'Copied!', originalText = 'Copy Text') {
     const label = btn.querySelector('.btn-label');
     const oldText = label.textContent;
+    const oldAriaLabel = btn.getAttribute('aria-label') || btn.getAttribute('title');
+    
     label.textContent = successText;
+    btn.setAttribute('aria-label', successText);
     btn.classList.add('success');
     btn.disabled = false;
+    
     setTimeout(() => {
         label.textContent = originalText || oldText;
+        if (oldAriaLabel) btn.setAttribute('aria-label', oldAriaLabel);
+        else btn.removeAttribute('aria-label');
         btn.classList.remove('success');
     }, 2000);
 }

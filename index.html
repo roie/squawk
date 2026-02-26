@@ -35,21 +35,22 @@
         <main>
             <section class="input-section">
                 <div class="input-header">
-                    <a href="#" id="try-example" class="link-subtle">💡 try an example</a>
+                    <a href="#" id="try-example" class="link-subtle" title="Load a sample airline ops message to see how it works">💡 try an example</a>
                 </div>
                 <textarea
                     id="input-text"
-                    placeholder="paste your ops message here..."></textarea>
+                    placeholder="paste your ops message here..."
+                    aria-label="Airline operations message input"></textarea>
                 <div class="button-group">
-                    <button id="translate-btn" class="btn btn-primary">✨ translate</button>
-                    <a href="#" id="clear-btn" class="link-subtle">🗑️ clear</a>
+                    <button id="translate-btn" class="btn btn-primary" title="Translate the message into plain English (Ctrl+Enter)">✨ translate</button>
+                    <a href="#" id="clear-btn" class="link-subtle" title="Clear input and results">🗑️ clear</a>
                 </div>
             </section>
 
-            <section class="output-section" id="output-section" style="display: none;">
-                <div class="card" id="output-card">
+            <section class="output-section" id="output-section" style="display: none;" aria-live="polite" aria-atomic="true">
+                <div class="card" id="output-card" role="region" aria-label="Translated Flight Information">
                     <div class="card-header">
-                        <div class="window-controls">
+                        <div class="window-controls" aria-hidden="true">
                             <span class="dot red"></span>
                             <span class="dot yellow"></span>
                             <span class="dot green"></span>
@@ -63,16 +64,16 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button id="copy-btn" class="btn btn-action" disabled>
-                        <span class="btn-icon">📋</span>
+                    <button id="copy-btn" class="btn btn-action" disabled title="Copy translation as text to clipboard">
+                        <span class="btn-icon" aria-hidden="true">📋</span>
                         <span class="btn-label">Copy Text</span>
                     </button>
-                    <button id="copy-image-btn" class="btn btn-action" disabled>
-                        <span class="btn-icon">🖼️</span>
+                    <button id="copy-image-btn" class="btn btn-action" disabled title="Copy flight card as an image to clipboard">
+                        <span class="btn-icon" aria-hidden="true">🖼️</span>
                         <span class="btn-label">Copy Image</span>
                     </button>
-                    <button id="save-btn" class="btn btn-action" disabled>
-                        <span class="btn-icon">💾</span>
+                    <button id="save-btn" class="btn btn-action" disabled title="Download flight card as a PNG image">
+                        <span class="btn-icon" aria-hidden="true">💾</span>
                         <span class="btn-label">Save PNG</span>
                     </button>
                 </div>

@@ -34,31 +34,31 @@ export function renderSingleFlight(flight) {
     if (flight.etaLocal || flight.staLocal || flight.stdLocal || flight.etdLocal) timeLabel += ' (Local)';
 
     let html = `
-        <div class="section-header ${headerClass}">${headerIcon} ${headerText}</div>
+        <div class="section-header ${headerClass}" role="heading" aria-level="2">${headerIcon} ${headerText}</div>
         <div class="flight-header">
             <div class="flight-info">
-                <span class="flight-number">${flight.number || 'Unknown'}</span>
-                ${routeDisplay ? `<span class="flight-route">• ${routeDisplay}</span>` : ''}
-                ${flight.date ? `<span class="flight-date">• ${flight.date}</span>` : ''}
+                <span class="flight-number" aria-label="Flight number: ${flight.number || 'Unknown'}">${flight.number || 'Unknown'}</span>
+                ${routeDisplay ? `<span class="flight-route" aria-label="Route: ${routeDisplay}">• ${routeDisplay}</span>` : ''}
+                ${flight.date ? `<span class="flight-date" aria-label="Flight date: ${flight.date}">• ${flight.date}</span>` : ''}
             </div>
-            ${time ? `<div class="time-box"><div class="time-label">${timeLabel}</div><div class="time-value">🕐 ${time}</div></div>` : ''}
+            ${time ? `<div class="time-box" aria-label="${timeLabel}"><div class="time-label">${timeLabel}</div><div class="time-value">🕐 ${time}</div></div>` : ''}
         </div>
     `;
 
     let infoBoxes = '';
-    if (flight.registration) infoBoxes += `<div class="info-box"><div class="value">🛩️ ${flight.registration}</div><div class="label">${flight.aircraft || 'Aircraft'}</div></div>`;
+    if (flight.registration) infoBoxes += `<div class="info-box" aria-label="Aircraft details"><div class="value">🛩️ ${flight.registration}</div><div class="label">${flight.aircraft || 'Aircraft'}</div></div>`;
     if (flight.gate) {
         let label = isArrival ? 'Arrival Gate' : 'Departure Gate';
         if (flight.towGate) label += ` → Tow ${flight.towGate}`;
-        infoBoxes += `<div class="info-box"><div class="value">🚪 ${flight.gate}</div><div class="label">${label}</div></div>`;
+        infoBoxes += `<div class="info-box" aria-label="Gate information"><div class="value">🚪 ${flight.gate}</div><div class="label">${label}</div></div>`;
     }
-    if (flight.stand) infoBoxes += `<div class="info-box"><div class="value">🅿️ ${flight.stand}</div><div class="label">Stand</div></div>`;
-    if (flight.counters) infoBoxes += `<div class="info-box"><div class="value">🎫 ${flight.counters}</div><div class="label">Check-In Counters</div></div>`;
-    if (flight.lateral) infoBoxes += `<div class="info-box"><div class="value">🛄 ${flight.lateral}</div><div class="label">Baggage Belt</div></div>`;
-    if (infoBoxes) html += `<div class="info-grid">${infoBoxes}</div>`;
+    if (flight.stand) infoBoxes += `<div class="info-box" aria-label="Stand assignment"><div class="value">🅿️ ${flight.stand}</div><div class="label">Stand</div></div>`;
+    if (flight.counters) infoBoxes += `<div class="info-box" aria-label="Check-in counters"><div class="value">🎫 ${flight.counters}</div><div class="label">Check-In Counters</div></div>`;
+    if (flight.lateral) infoBoxes += `<div class="info-box" aria-label="Baggage belt"><div class="value">🛄 ${flight.lateral}</div><div class="label">Baggage Belt</div></div>`;
+    if (infoBoxes) html += `<div class="info-grid" role="group" aria-label="Operational assignments">${infoBoxes}</div>`;
 
     if (flight.total !== undefined || flight.paxMain !== undefined) {
-        html += '<div class="pax-section"><div class="pax-section-label">👥 Passengers on Board</div><div class="pax-grid">';
+        html += '<div class="pax-section" role="group" aria-label="Passenger counts"><div class="pax-section-label">👥 Passengers on Board</div><div class="pax-grid">';
         if (flight.paxBusiness !== undefined) html += `<div class="pax-box"><div class="count">${flight.paxBusiness}</div><div class="type">Business</div></div>`;
         if (flight.paxEconomy !== undefined) html += `<div class="pax-box"><div class="count">${flight.paxEconomy}</div><div class="type">Economy</div></div>`;
         if (flight.paxMain !== undefined && flight.paxBusiness === undefined && flight.paxEconomy === undefined) html += `<div class="pax-box"><div class="count">${flight.paxMain}</div><div class="type">Adults/Seats</div></div>`;
