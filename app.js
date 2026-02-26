@@ -13,6 +13,7 @@ import { copyToClipboard, copyImageToClipboard, saveAsPNG } from './exporter.js'
 const inputText = document.getElementById('input-text');
 const translateBtn = document.getElementById('translate-btn');
 const tryExampleLink = document.getElementById('try-example');
+const clearBtn = document.getElementById('clear-btn');
 const copyBtn = document.getElementById('copy-btn');
 const copyImageBtn = document.getElementById('copy-image-btn');
 const saveBtn = document.getElementById('save-btn');
@@ -55,6 +56,18 @@ WAITING FOR PAX FROM 🛫 FI601.
 PLEASE PRIORITIZE BGS.`;
     translate();
 });
+
+clearBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    inputText.value = '';
+    outputSection.style.display = 'none';
+    lastParsedFlights = [];
+    copyBtn.disabled = true;
+    copyImageBtn.disabled = true;
+    saveBtn.disabled = true;
+    inputText.focus();
+});
+
 copyBtn.addEventListener('click', () => copyToClipboard(lastParsedFlights, copyBtn));
 copyImageBtn.addEventListener('click', () => copyImageToClipboard(outputCard, copyImageBtn));
 saveBtn.addEventListener('click', () => saveAsPNG(outputCard, lastParsedFlights, saveBtn));

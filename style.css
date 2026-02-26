@@ -94,6 +94,28 @@ header h1 {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+.input-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.25rem;
+}
+
+#input-text {
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    background: var(--bg-input);
+    color: #1a1a1a;
+    border: none;
+    border-radius: var(--radius);
+    resize: vertical;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
 #input-text:focus {
     outline: 2px solid rgba(59, 130, 246, 0.5);
     outline-offset: 2px;
@@ -102,15 +124,18 @@ header h1 {
 .button-group {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .link-subtle {
     color: var(--text-muted);
     font-size: 0.75rem;
     text-decoration: none;
-    transition: color 0.2s;
+    transition: all 0.2s;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 .link-subtle:hover {
